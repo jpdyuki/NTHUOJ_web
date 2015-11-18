@@ -261,3 +261,52 @@ class Tester(TestCase):
         self.assertTrue(removing_result)
         testcases = get_testcase(problem)
         self.assertEqual(len(testcases), 0)
+		
+	def test_07_tag(self):
+        """ test view 'tag' """
+        # 1.user does not login
+        # Expectation: redirect to login page
+        pid = 1
+        target_url = reverse('problem:tag', args=[pid])
+        redirect_url = reverse('users:login') + '?next=' + target_url
+        response = self.ANONYMOUS_CLIENT.get(target_url)
+        self.assertRedirects(response, redirect_url)
+
+        # 2.without using POST method
+        # Expectation: empty HttpResponse
+        pid = 1
+        target_url = reverse('problem:tag', args=[pid])
+        response = self.ADMIN_CLIENT.get(target_url)
+        self.assertEqual(response.content, "")
+
+        # 3.using POST method without argument 'tag_name'
+        # Expectation: error 500 (server code runtime error: cannot retrieve request.POST['tag_name'])
+        pid = 1
+        target_url = reverse('problem:tag', args=[pid])
+        response = self.ADMIN_CLIENT.post(target_url)
+        self.assertEqual(response.status_code, 500)
+
+        # 4.using POST method with argument 'tag_name', but problem does not exist
+        # Expectation: error 404
+        pid = 1
+        target_url = reverse('problem:tag', args=[pid])
+        response = self.ADMIN_CLIENT.post(target_url, data={'tag_name':''})
+        self.assertContains(response, "problem %d does not exist" % (pid), status_code=404)
+
+        # 5.using POST method with argument 'tag_name', and problem exists
+        # Expectation: create new tag for this problem with the following constraint
+        #              a) duplicate or empty string is not allowed to be added
+        #              b) the string whose length is over 20 will be truncated
+        problem = create_problem('testProblem', self.JUDGE_USER)
+        target_url = reverse('problem:tag', args=[problem.pk])
+        tag_names = ['nthuoj', 'ggqaq', 'ggqaqXDD', '', 'nthuoj', '01234567899876543210END']
+        for i in range(2):
+            self.ADMIN_CLIENT.post(target_url, data={'tag_name':tag_names[i]})
+        for i in range(2,4):
+            self.JUDGE_CLIENT.post(target_url, data={'tag_name':tag_names[i]})
+        for i in range(4,6):
+            self.NORMAL_CLIENT.post(target_url, data={'tag_name':tag_names[i]})
+        results = [tag.tag_name for tag in problem.tags.all()]
+        expectations = ['nthuoj', 'ggqaq', 'ggqaqXDD', '01234567899876543210']
+        self.assertEqual(problem.tags.count(), 4)
+        self.assertTrue(set(results)==set(expectations))
