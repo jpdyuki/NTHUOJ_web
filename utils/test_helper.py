@@ -88,3 +88,12 @@ def create_testcase_files(file_name, size=100, uploaded=False):
     except (IOError, OSError):
         print "Failed to create testcase files for testing..."
     return file_name
+
+def create_testcase(problem, time_limit, memory_limit, local_files=True, uploaded_files=False):
+    testcase = Testcase.objects.create(problem=problem, time_limit=time_limit,
+                                       memory_limit=memory_limit)
+    if local_files:
+        create_testcase_files(testcase.pk)
+    if uploaded_files:
+        create_testcase_files(testcase.pk, uploaded=True)
+    return testcase
