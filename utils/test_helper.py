@@ -44,3 +44,18 @@ def get_test_judge_user():
 
 def get_test_normal_user():
     return User.objects.get(username="test_user")
+
+def get_test_admin_client():
+    test_admin_client = Client()
+    test_admin_client.login(username="test_admin", password="test_admin")
+    return test_admin_client
+
+def get_test_judge_client():
+    test_judge_client = Client()
+    test_judge_client.login(username="test_judge", password="test_judge")
+    return test_judge_client
+
+def get_test_normal_user_client():
+    test_user_client = Client()
+    test_user_client.login(username="test_user", password="test_user")
+    return test_user_client
