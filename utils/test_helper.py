@@ -72,6 +72,15 @@ def create_problem(pname, owner):
 def random_word(length):
     return ''.join(random.choice(string.lowercase) for i in range(length)) 
 
+def create_judge_code(prefix, pid, file_ex, size=100):
+    file_name = "%s%s%s%s" % (TEST_PATH, prefix, pid, file_ex)
+    try:
+        with open(file_name, 'w') as fp:
+            fp.write(random_word(size))
+    except (IOError, OSError):
+        print "Failed to create judge code for testing..."
+    return file_name
+
 def create_testcase_files(file_name, size=100, uploaded=False):
     if file_name == "":
         file_name = random_word(50)
@@ -117,6 +126,17 @@ def remove_testcase_file(local_file_name, uploaded_file_name=None):
         remove_file_if_exists(uploaded_input_file_name)
         remove_file_if_exists(uploaded_output_file_name)
 
+def compare_local_and_uploaded_file(local_file_name, uploaded_file_name):
+    try:
+        return filecmp.cmp(local_file_name, uploaded_file_name)
+    except (IOError, OSError):
+        print "Something went wrong during file I/O..."
+        print "Please make sure the path for special/parcial judge code in nthuoj.cfg\
+               is an existing directory."
+        print "Also, the user account of this machine that nthuoj depends on\
+               should have permission to access and modify all the files in this directory."
+        return False
+
 def compare_local_and_uploaded_testcase_files(local_file_name, uploaded_file_name):
     in_local = "%s%s.in" % (TEST_PATH, local_file_name)
     out_local = "%s%s.out" % (TEST_PATH, local_file_name)
@@ -141,3 +161,18 @@ def create_tag(tag_name, problem):
 def create_submission(problem, user, status):
     submission = Submission.objects.create(problem=problem, user=user, status=status)
     return submission
+
+def POST_data_of_editing_Problem():
+    data = {
+        'pname': 'testProblem',
+        'owner': 'test_judge',
+        'description': 'This is a problem for testing.',
+        'input': 'No input.',
+        'output': 'Display "Hello World!" in standard output.',
+        'sample_in': '--',
+        'sample_out': 'Hello World!',
+        'visible': True,
+        'judge_source': Problem.LOCAL,
+        'judge_type': Problem.NORMAL,
+        'judge_language': Problem.CPP}
+    return data
