@@ -310,3 +310,65 @@ class Tester(TestCase):
         expectations = ['nthuoj', 'ggqaq', 'ggqaqXDD', '01234567899876543210']
         self.assertEqual(problem.tags.count(), 4)
         self.assertTrue(set(results)==set(expectations))
+
+    def test_08_delete_tag(self):
+        """ test view 'delete_tag' """
+        # 1.user does not login
+        # Expectation: redirect to login page
+        pid = 1
+        tag_id = 1
+        target_url = reverse('problem:delete_tag', args=[pid, tag_id])
+        redirect_url = reverse('users:login') + '?next=' + target_url
+        response = self.ANONYMOUS_CLIENT.get(target_url)
+        self.assertRedirects(response, redirect_url)
+
+        # 2.problem does not exist
+        # Expectation: error 404
+        pid = 1
+        tag_id = 1
+        target_url = reverse('problem:delete_tag', args=[pid, tag_id])
+        response = self.ADMIN_CLIENT.get(target_url)
+        self.assertContains(response, "problem %d does not exist" % (pid), status_code=404)
+
+        # 3.tag does not exist
+        # Expectation: error 404
+        problem = create_problem('testProblem', self.JUDGE_USER)
+        tag_id = 1
+        target_url = reverse('problem:delete_tag', args=[problem.pk, tag_id])
+        response = self.JUDGE_CLIENT.get(target_url)
+        self.assertContains(response, "tag %d does not exist" % (tag_id), status_code=404)
+
+        # 4.user has no permission
+        # Expectation: error 403
+        problem = create_problem('testProblem', self.JUDGE_USER)
+        tag = create_tag('testTag', problem)
+        target_url = reverse('problem:delete_tag', args=[problem.pk, tag.pk])
+        response = self.NORMAL_CLIENT.get(target_url)
+        self.assertContains(response, "No Permission to Access.", status_code=403)
+
+        # 5.both problem and tag exists and user has permission, but tag does not belong to the problem
+        # Expectation: nothing changed
+        problem = create_problem('testProblem', self.JUDGE_USER)
+        tag = create_tag('greedy', problem)
+        another_problem = create_problem('testProblem', self.JUDGE_USER)
+        tag_another = create_tag('greedy', another_problem)
+        target_url = reverse('problem:delete_tag', args=[problem.pk, tag_another.pk])
+        response = self.ADMIN_CLIENT.get(target_url)
+        self.assertEquals(problem.tags.count(), 1)
+        self.assertEquals(another_problem.tags.count(), 1)
+
+        # 6.both problem and tag exists and user has permission, and tag belongs to the problem
+        # Expectation: remove the tag from the problem
+        problem = create_problem('testProblem', self.JUDGE_USER)
+        tag_names = ['nthuoj', 'ggqaq', 'ggqaqXDD', '01234567899876543210']
+        tags = []
+        for i in range(4):
+            new_tag = create_tag(tag_names[i], problem)
+            tags.append(new_tag)
+        for i in [1, 2]:
+            target_url = reverse('problem:delete_tag', args=[problem.pk, tags[i].pk])
+            response = self.ADMIN_CLIENT.get(target_url)
+        results = [tag.tag_name for tag in problem.tags.all()]
+        expectations = ['nthuoj', '01234567899876543210']
+        self.assertEquals(problem.tags.count(), 2)
+        self.assertTrue(set(results)==set(expectations))
