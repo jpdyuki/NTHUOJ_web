@@ -2,6 +2,7 @@ from django.test import Client
 
 import os
 
+from problem.models import Problem
 from users.models import User
 
 
@@ -59,3 +60,7 @@ def get_test_normal_user_client():
     test_user_client = Client()
     test_user_client.login(username="test_user", password="test_user")
     return test_user_client
+
+def create_problem(pname, owner):
+    problem = Problem.objects.create(pname=pname, owner=owner)
+    return problem
