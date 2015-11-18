@@ -1,4 +1,5 @@
 from django.test import TestCase, Client
+from django.core.urlresolvers import reverse
 
 from utils.test_helper import *
 
@@ -19,3 +20,45 @@ class Tester(TestCase):
         self.NORMAL_USER = get_test_normal_user()
         self.NORMAL_CLIENT = get_test_normal_user_client()
         self.ANONYMOUS_CLIENT = Client()
+
+    def test_01_new(self):
+        """ test view 'new' """
+        target_url = reverse('problem:new')
+
+        # 1.user does not login
+        # Expectation: redirect to login page
+        redirect_url = reverse('users:login') + '?next=' + target_url
+        response = self.ANONYMOUS_CLIENT.get(target_url)
+        self.assertRedirects(response, redirect_url)
+
+        # 2.without using POST method
+        # Expectation: redirect to view 'problem'
+        response = self.ADMIN_CLIENT.get(target_url)
+        redirect_url = reverse('problem:problem')
+        self.assertRedirects(response, redirect_url)
+
+        # 3.using POST method, but user has no permission
+        # Expectation: error 403
+        response = self.NORMAL_CLIENT.post(target_url)
+        self.assertContains(response, "No Permission to Access.", status_code=403)
+
+        # 4.using POST method without argument 'pname'
+        # Expectation: redirect to view 'problem'
+        response = self.ADMIN_CLIENT.post(target_url)
+        redirect_url = reverse('problem:problem')
+        self.assertRedirects(response, redirect_url)
+
+        # 5.using POST method but argument 'pname' is empty string
+        # Expectation: redirect to view 'problem'
+        response = self.ADMIN_CLIENT.post(target_url, data={'pname':''})
+        redirect_url = reverse('problem:problem')
+        self.assertRedirects(response, redirect_url)
+
+        # 6.using POST method and argument 'pname' is not empty string
+        # Expectation: create new problem successfully and redirect to view 'edit'
+        pid = 1
+        pname = 'testProblem'
+        response = self.JUDGE_CLIENT.post(target_url, data={'pname':pname}, follow=True)
+        redirect_url = reverse('problem:edit', args=[pid])
+        self.assertRedirects(response, redirect_url)
+        self.assertEqual(response.context['problem'].pname, pname)
