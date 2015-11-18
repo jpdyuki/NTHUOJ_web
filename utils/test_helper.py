@@ -4,6 +4,7 @@ import os
 import random
 import string
 import filecmp
+import shutil
 
 from problem.models import Problem, Tag, Testcase, Submission
 from users.models import User
@@ -16,6 +17,10 @@ def create_test_directory(dir_name):
     TEST_PATH = dir_name
     if not os.path.isdir(TEST_PATH):
         os.makedirs(TEST_PATH)
+
+def remove_test_directory(dir_name):
+    if os.path.isdir(dir_name):
+        shutil.rmtree(dir_name)
 
 def create_test_user(username, password, user_level):
     test_user = User.objects.create_user(username, password)
