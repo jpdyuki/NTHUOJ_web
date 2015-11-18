@@ -97,3 +97,21 @@ def create_testcase(problem, time_limit, memory_limit, local_files=True, uploade
     if uploaded_files:
         create_testcase_files(testcase.pk, uploaded=True)
     return testcase
+
+def remove_file_if_exists(file_name):
+    try:
+        if os.path.isfile(file_name):
+            os.remove(file_name)
+    except (IOError, OSError):
+        print "Something went wrong when removing file: %s" % (file_name)
+
+def remove_testcase_file(local_file_name, uploaded_file_name=None):
+    local_input_file_name = "%s%s.in" % (TEST_PATH, local_file_name)
+    local_output_file_name = "%s%s.out" % (TEST_PATH, local_file_name)
+    remove_file_if_exists(local_input_file_name)
+    remove_file_if_exists(local_output_file_name)
+    if uploaded_file_name != None:
+        uploaded_input_file_name = "%s%s.in" % (TESTCASE_PATH, uploaded_file_name)
+        uploaded_output_file_name = "%s%s.out" % (TESTCASE_PATH, uploaded_file_name)
+        remove_file_if_exists(uploaded_input_file_name)
+        remove_file_if_exists(uploaded_output_file_name)
