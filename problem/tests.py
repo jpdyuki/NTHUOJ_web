@@ -23,6 +23,10 @@ class Tester(TestCase):
         self.NORMAL_CLIENT = get_test_normal_user_client()
         self.ANONYMOUS_CLIENT = Client()
 
+    def tearDown(self):
+        """ implements the interface of destroying django.test.TestCase """
+        remove_test_directory("./problem/test/")
+
     def test_01_new(self):
         """ test view 'new' """
         target_url = reverse('problem:new')
@@ -435,7 +439,7 @@ class Tester(TestCase):
         self.assertTrue(removing_result)
         testcases = get_testcase(problem)
         self.assertEqual(len(testcases), 0)
-		
+
     def test_07_tag(self):
         """ test view 'tag' """
         # 1.user does not login
