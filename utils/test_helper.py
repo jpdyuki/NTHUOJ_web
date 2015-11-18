@@ -35,3 +35,12 @@ def create_test_normal_user():
     password = "test_user"
     user_level = User.USER
     create_test_user(username, password, user_level)
+
+def get_test_admin_user():
+    return User.objects.get(username="test_admin")
+
+def get_test_judge_user():
+    return User.objects.get(username="test_judge")
+
+def get_test_normal_user():
+    return User.objects.get(username="test_user")
