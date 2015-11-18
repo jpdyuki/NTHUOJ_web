@@ -62,3 +62,26 @@ class Tester(TestCase):
         redirect_url = reverse('problem:edit', args=[pid])
         self.assertRedirects(response, redirect_url)
         self.assertEqual(response.context['problem'].pname, pname)
+
+    def test_02_detail(self):
+        """ test view 'detail' """
+        # 1.problem does not exist
+        # Expectation: error 404
+        pid = 1
+        target_url = reverse('problem:detail', args=[pid])
+        response = self.ADMIN_CLIENT.get(target_url)
+        self.assertContains(response, "problem %d does not exist" % (pid), status_code=404)
+
+        # 2.user has no permission
+        # Expectation: error 403
+        problem = create_problem('testProblem', self.JUDGE_USER);
+        target_url = reverse('problem:detail', args=[problem.pk])
+        response = self.ANONYMOUS_CLIENT.get(target_url)
+        self.assertContains(response, "No Permission to Access.", status_code=403)
+
+        # 3.problem exists and user has permission
+        # Expectation: render view 'detail' with the problem requested
+        problem = create_problem('testProblem', self.JUDGE_USER);
+        target_url = reverse('problem:detail', args=[problem.pk])
+        response = self.JUDGE_CLIENT.get(target_url)
+        self.assertEqual(response.context['problem'], problem)
