@@ -5,7 +5,7 @@ import random
 import string
 import filecmp
 
-from problem.models import Problem, Tag, Testcase
+from problem.models import Problem, Tag, Testcase, Submission
 from users.models import User
 from utils import config_info
 
@@ -137,3 +137,7 @@ def create_tag(tag_name, problem):
     problem.tags.add(new_tag)
     problem.save()
     return new_tag
+
+def create_submission(problem, user, status):
+    submission = Submission.objects.create(problem=problem, user=user, status=status)
+    return submission
