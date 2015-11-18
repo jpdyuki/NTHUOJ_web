@@ -213,3 +213,51 @@ class Tester(TestCase):
         remove_testcase_file(testcase.pk, testcase.pk)
         self.assertContains(response, "tid", status_code=200)
         self.assertTrue(compare_result)
+
+    def test_06_delete_testcase(self):
+        """ test view 'delete_testcase' """
+        # 1.user does not login
+        # Expectation: redirect to login page
+        pid = 1
+        tid = 1
+        target_url = reverse('problem:delete_testcase', args=[pid, tid])
+        redirect_url = reverse('users:login') + '?next=' + target_url
+        response = self.ANONYMOUS_CLIENT.get(target_url)
+        self.assertRedirects(response, redirect_url)
+
+        # 2.problem does not exist
+        # Expectation: error 404
+        pid = 1
+        tid = 1
+        target_url = reverse('problem:delete_testcase', args=[pid, tid])
+        response = self.ADMIN_CLIENT.get(target_url)
+        self.assertContains(response, "problem %d does not exist" % (pid), status_code=404)
+
+        # 3.testcase does not exist
+        # Expectation: error 404
+        problem = create_problem('testProblem', self.JUDGE_USER)
+        tid = 1
+        target_url = reverse('problem:delete_testcase', args=[problem.pk, tid])
+        response = self.ADMIN_CLIENT.get(target_url)
+        self.assertContains(response, "testcase %d does not exist" % (tid), status_code=404)
+
+        # 4.user has no permission
+        # Expectation: error 403
+        problem = create_problem('testProblem', self.JUDGE_USER)
+        testcase = create_testcase(problem, 1, 32, local_files=False)
+        target_url = reverse('problem:delete_testcase', args=[problem.pk, testcase.pk])
+        response = self.NORMAL_CLIENT.get(target_url)
+        self.assertContains(response, "No Permission to Access.", status_code=403)
+
+        # 5.both problem and testcase exist and user has permission
+        # Expectation: remove input and output files of testcase from server
+        problem = create_problem('testProblem', self.JUDGE_USER)
+        testcase = create_testcase(problem, 1, 32, uploaded_files=True)
+        target_url = reverse('problem:delete_testcase', args=[problem.pk, testcase.pk])
+        response = self.JUDGE_CLIENT.get(target_url)
+        removing_result = not os.path.isfile('%s%d.in' % (TESTCASE_PATH, testcase.pk)) and\
+                          not os.path.isfile('%s%d.in' % (TESTCASE_PATH, testcase.pk))
+        remove_testcase_file(testcase.pk, testcase.pk)
+        self.assertTrue(removing_result)
+        testcases = get_testcase(problem)
+        self.assertEqual(len(testcases), 0)
