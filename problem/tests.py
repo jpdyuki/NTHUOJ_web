@@ -85,3 +85,35 @@ class Tester(TestCase):
         target_url = reverse('problem:detail', args=[problem.pk])
         response = self.JUDGE_CLIENT.get(target_url)
         self.assertEqual(response.context['problem'], problem)
+
+    def test_03_delete_problem(self):
+        """ test view 'delete_problem' """
+        # 1.user does not login
+        # Expectation: redirect to login page
+        pid = 1
+        target_url = reverse('problem:delete_problem', args=[pid])
+        redirect_url = reverse('users:login') + '?next=' + target_url
+        response = self.ANONYMOUS_CLIENT.get(target_url)
+        self.assertRedirects(response, redirect_url)
+
+        # 2.problem does not exist
+        # Expectation: error 404
+        pid = 1
+        target_url = reverse('problem:delete_problem', args=[pid])
+        response = self.ADMIN_CLIENT.get(target_url)
+        self.assertContains(response, "problem %d does not exist" % (pid), status_code=404)
+
+        # 3.user has no permission
+        # Expectation: error 403
+        problem = create_problem('testProblem', self.ADMIN_USER);
+        target_url = reverse('problem:delete_problem', args=[problem.pk])
+        response = self.JUDGE_CLIENT.get(target_url)
+        self.assertContains(response, "No Permission to Access.", status_code=403)
+
+        # 4.problem exists and user has permission
+        # Expectation: delete problem successfully and redirect to view 'problem'
+        redirect_url = reverse('problem:problem')
+        response = self.ADMIN_CLIENT.get(target_url)
+        self.assertRedirects(response, redirect_url)
+        response = self.ADMIN_CLIENT.get(target_url)
+        self.assertContains(response, "problem %d does not exist" % (problem.pk), status_code=404)
