@@ -1,11 +1,14 @@
 from django.test import Client
 
 import os
+import random
+import string
 
-from problem.models import Problem
+from problem.models import Problem, Testcase
 from users.models import User
+from utils import config_info
 
-
+TESTCASE_PATH = config_info.get_config('path', 'testcase_path')
 TEST_PATH = ""
 
 def create_test_directory(dir_name):
@@ -64,3 +67,24 @@ def get_test_normal_user_client():
 def create_problem(pname, owner):
     problem = Problem.objects.create(pname=pname, owner=owner)
     return problem
+
+def random_word(length):
+    return ''.join(random.choice(string.lowercase) for i in range(length)) 
+
+def create_testcase_files(file_name, size=100, uploaded=False):
+    if file_name == "":
+        file_name = random_word(50)
+    if not uploaded:
+        path = TEST_PATH
+    else:
+        path = TESTCASE_PATH
+    input_file_name = "%s%s.in" % (path, file_name)
+    output_file_name = "%s%s.out" % (path, file_name)
+    try:
+        with open(input_file_name, 'w') as t_in:
+            t_in.write(random_word(size))
+        with open(output_file_name, 'w') as t_out:
+            t_out.write(random_word(size))
+    except (IOError, OSError):
+        print "Failed to create testcase files for testing..."
+    return file_name
