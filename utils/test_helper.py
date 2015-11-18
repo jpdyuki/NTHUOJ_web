@@ -5,7 +5,7 @@ import random
 import string
 import filecmp
 
-from problem.models import Problem, Testcase
+from problem.models import Problem, Tag, Testcase
 from users.models import User
 from utils import config_info
 
@@ -130,3 +130,10 @@ def compare_local_and_uploaded_testcase_files(local_file_name, uploaded_file_nam
         print "Also, the user account of this machine that nthuoj depends on\
                should have permission to access and modify all the files in this directory."
         return False
+
+def create_tag(tag_name, problem):
+    new_tag, created = Tag.objects.get_or_create(tag_name=tag_name)
+    #new_tag = Tag.objects.create(tag_name=tag_name)
+    problem.tags.add(new_tag)
+    problem.save()
+    return new_tag
