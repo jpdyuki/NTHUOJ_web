@@ -3,6 +3,7 @@ from django.test import Client
 import os
 import random
 import string
+import filecmp
 
 from problem.models import Problem, Testcase
 from users.models import User
@@ -115,3 +116,17 @@ def remove_testcase_file(local_file_name, uploaded_file_name=None):
         uploaded_output_file_name = "%s%s.out" % (TESTCASE_PATH, uploaded_file_name)
         remove_file_if_exists(uploaded_input_file_name)
         remove_file_if_exists(uploaded_output_file_name)
+
+def compare_local_and_uploaded_testcase_files(local_file_name, uploaded_file_name):
+    in_local = "%s%s.in" % (TEST_PATH, local_file_name)
+    out_local = "%s%s.out" % (TEST_PATH, local_file_name)
+    in_upload = "%s%s.in" % (TESTCASE_PATH, uploaded_file_name)
+    out_upload = "%s%s.out" % (TESTCASE_PATH, uploaded_file_name)
+    try:
+        return filecmp.cmp(in_upload, in_local) and filecmp.cmp(out_upload, out_local)
+    except (IOError, OSError):
+        print "Something went wrong during file I/O..."
+        print "Please make sure the path for testcase in nthuoj.cfg is an existing directory."
+        print "Also, the user account of this machine that nthuoj depends on\
+               should have permission to access and modify all the files in this directory."
+        return False
