@@ -17,3 +17,21 @@ def create_test_user(username, password, user_level):
     test_user.user_level = user_level
     test_user.is_active = True
     test_user.save()
+
+def create_test_admin_user():
+    username = "test_admin"
+    password = "test_admin"
+    user_level = User.ADMIN
+    create_test_user(username, password, user_level)
+
+def create_test_judge_user():
+    username = "test_judge"
+    password = "test_judge"
+    user_level = User.JUDGE
+    create_test_user(username, password, user_level)
+
+def create_test_normal_user():
+    username = "test_user"
+    password = "test_user"
+    user_level = User.USER
+    create_test_user(username, password, user_level)
