@@ -80,8 +80,10 @@ def get_test_normal_user_client(index=0):
     test_user_client.login(username=text, password=text)
     return test_user_client
 
-def create_problem(pname, owner):
-    problem = Problem.objects.create(pname=pname, owner=owner)
+def create_problem(owner, pname=None, visible=False):
+    if pname == None:
+        pname = random_word(20)
+    problem = Problem.objects.create(pname=pname, owner=owner, visible=visible)
     return problem
 
 def random_word(length):
