@@ -344,3 +344,60 @@ class Tester_Problem_edit(TestCase):
         self.assertTrue(result)
         self.assertFalse(result2)
         self.assertFalse(result3)
+
+
+class Tester_Problem_rejudge(TestCase):
+    """ test view 'problem:rejudge' """
+
+    def setUp(self):
+        create_test_admin_user()
+        create_test_judge_user()
+        create_test_normal_user()
+        self.ADMIN_USER = get_test_admin_user()
+        self.ADMIN_CLIENT = get_test_admin_client()
+        self.JUDGE_USER = get_test_judge_user()
+        self.JUDGE_CLIENT = get_test_judge_client()
+        self.NORMAL_USER = get_test_normal_user()
+        self.NORMAL_CLIENT = get_test_normal_user_client()
+        self.ANONYMOUS_CLIENT = Client()
+
+    def test_01_login(self):
+        """ test view 'rejudge' """
+        # 1.user does not login
+        # Expectation: redirect to login page
+        target_url = reverse('problem:rejudge')
+        redirect_url = reverse('users:login') + '?next=' + target_url
+        response = self.ANONYMOUS_CLIENT.get(target_url)
+        self.assertRedirects(response, redirect_url)
+
+    def test_02_problem_not_found(self):
+        # 2.problem does not exist
+        # Expectation: error 404
+        pid = 1000000
+        target_url = reverse('problem:rejudge')
+        response = self.NORMAL_CLIENT.get(target_url, data={'pid':pid})
+        self.assertEqual(response.status_code, 404)
+
+    def test_03_permission(self):
+        # 3.user has no permission
+        # Expectation: error 403
+        problem = create_problem(self.JUDGE_USER)
+        target_url = reverse('problem:rejudge')
+        response = self.NORMAL_CLIENT.get(target_url, data={'pid':problem.pk})
+        self.assertEqual(response.status_code, 403)
+
+    def test_04_rejudge(self):
+        # 4.using GET method with argument 'pid', and problem exists, and user has permission
+        # Expectation: rejudge all submissions with respect to this problem
+        problem = create_problem(self.JUDGE_USER)
+        target_url = reverse('problem:rejudge')
+        users = [self.ADMIN_USER, self.JUDGE_USER, self.NORMAL_USER]
+        submission_statuses = [Submission.ACCEPTED, Submission.NOT_ACCEPTED, Submission.COMPILE_ERROR,
+                             Submission.RESTRICTED_FUNCTION, Submission.JUDGE_ERROR, Submission.JUDGING]
+        for i in range(3):
+            for j in range(2):
+                create_submission(problem, users[i], submission_statuses[i*2+j])
+        response = self.JUDGE_CLIENT.get(target_url, data={'pid':problem.pk})
+        submissions = Submission.objects.filter(problem=problem)
+        for submission in submissions:
+            self.assertEqual(submission.status, Submission.WAIT)
