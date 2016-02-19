@@ -199,3 +199,137 @@ class Tester_Contest_contest_info(TestCase):
         self.assertEqual(response.context['contest'], self.CONTEST)
         response = self.ADMIN_CLIENT.get(target_url)
         self.assertEqual(response.context['contest'], self.CONTEST)
+
+
+class Tester_Contest_edit(TestCase):
+    """ test view 'contest:edit' """
+
+    def setUp(self):
+        create_test_admin_user()
+        # create 6 judge level users
+        # (1 as contest owner, 2 as coowner,
+        #  2 as problem owner, 1 as normal judge)
+        create_test_judge_user(6)
+        create_test_normal_user()
+        self.ADMIN_USER = get_test_admin_user()
+        self.ADMIN_CLIENT = get_test_admin_client()
+        self.JUDGE_USERS = [get_test_judge_user(i) for i in range(6)]
+        self.JUDGE_CLIENTS = [get_test_judge_client(i) for i in range(6)]
+        self.NORMAL_USER = get_test_normal_user()
+        self.NORMAL_CLIENT = get_test_normal_user_client()
+        self.ANONYMOUS_CLIENT = Client()
+        self.CONTEST_OWNER = self.JUDGE_USERS[0]
+        self.CONTEST_COOWNERS = self.JUDGE_USERS[1:3]
+        self.CONTEST_PROBLEM_OWNERS = self.JUDGE_USERS[3:5]
+        self.CONTEST_PROBLEMS = []
+        for i in range(2):
+            problem = create_problem(
+                self.CONTEST_PROBLEM_OWNERS[i], pname='contest_problem'+str(i), visible=True)
+            self.CONTEST_PROBLEMS.append(problem)
+
+    def test_01_login(self):
+        # 1.user does not login
+        # Expectation: redirect to login page
+        cid = 1
+        target_url = reverse('contest:edit', args=[cid])
+        redirect_url = reverse('users:login') + '?next=' + target_url
+        response = self.ANONYMOUS_CLIENT.get(target_url)
+        self.assertRedirects(response, redirect_url)
+
+    def test_02_contest_not_found(self):
+        # 2.contest does not exist
+        # Expectation: error 404
+        cid = 1000000
+        target_url = reverse('contest:edit', args=[cid])
+        response = self.JUDGE_CLIENTS[0].get(target_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_03_permission(self):
+        # 3.user has no permission (only admin and contest owner/coowner can edit)
+        # Expectation: error 403
+        data = POST_data_of_editing_Contest(
+            self.CONTEST_OWNER, coowners=self.CONTEST_COOWNERS, problems=self.CONTEST_PROBLEMS)
+        new_contest = create_contest_by_data(data)
+        target_url = reverse('contest:edit', args=[new_contest.pk])
+        data['cname'] = random_word(20)
+        clients = self.JUDGE_CLIENTS[3:5] + [self.NORMAL_CLIENT]
+        for client in clients:
+            response = client.get(target_url)
+            self.assertEqual(response.status_code, 403)
+            response = client.post(target_url, data=data)
+            self.assertEqual(response.status_code, 403)
+        contest_obj = Contest.objects.get(pk=new_contest.pk)
+        self.assertEqual(contest_obj, new_contest)
+
+    def test_04_invalid_form_01(self):
+        # 4.user has permission but form is invalid (start_time < end_time)
+        # Expectation: failed to edit the contest
+        data = POST_data_of_editing_Contest(
+            self.CONTEST_OWNER, coowners=self.CONTEST_COOWNERS, problems=self.CONTEST_PROBLEMS)
+        new_contest = create_contest_by_data(data)
+        target_url = reverse('contest:edit', args=[new_contest.pk])
+        data['start_time'] = datetime.now()
+        data['end_time'] = datetime.now() + timedelta(days=-1)
+        clients = self.JUDGE_CLIENTS[0:3] + [self.ADMIN_CLIENT]
+        for client in clients:
+            response = client.post(target_url, data=data)
+            self.assertEqual(response.context['contest'], new_contest)
+            self.assertContains(response, "Some fields are invalid!")
+
+    def test_05_invalid_form_02(self):
+        # 5.user has permission but form is invalid (start_time < end_time - freeze_time)
+        # Expectation: failed to edit the contest
+        data = POST_data_of_editing_Contest(
+            self.CONTEST_OWNER, coowners=self.CONTEST_COOWNERS, problems=self.CONTEST_PROBLEMS)
+        new_contest = create_contest_by_data(data)
+        target_url = reverse('contest:edit', args=[new_contest.pk])
+        data['start_time'] = datetime.now()
+        data['end_time'] = datetime.now() + timedelta(minutes=1)
+        data['freeze_time'] = 60
+        clients = self.JUDGE_CLIENTS[0:3] + [self.ADMIN_CLIENT]
+        for client in clients:
+            response = client.post(target_url, data=data)
+            self.assertEqual(response.context['contest'], new_contest)
+            self.assertContains(response, "Some fields are invalid!")
+
+    def test_06_invalid_form_03(self):
+        # 6.user has permission but form is invalid (contest owner is not the same user)
+        # Expectation: failed to edit the contest
+        data = POST_data_of_editing_Contest(
+            self.CONTEST_OWNER, coowners=self.CONTEST_COOWNERS, problems=self.CONTEST_PROBLEMS)
+        new_contest = create_contest_by_data(data)
+        target_url = reverse('contest:edit', args=[new_contest.pk])
+        data['owner'] = self.JUDGE_USERS[3].username
+        clients = self.JUDGE_CLIENTS[0:3] + [self.ADMIN_CLIENT]
+        for client in self.JUDGE_CLIENTS[0:3]:
+            response = client.post(target_url, data=data)
+            self.assertEqual(response.context['contest'], new_contest)
+            self.assertContains(response, "Some fields are invalid!")
+
+    def test_07_edit_contest(self):
+        # 7.user has permission and the form is valid
+        # Expectation: edit the contest successfully and redirect to view 'contest'
+        data = POST_data_of_editing_Contest(
+            self.CONTEST_OWNER, coowners=self.CONTEST_COOWNERS, problems=self.CONTEST_PROBLEMS)
+        new_contest = create_contest_by_data(data)
+        target_url = reverse('contest:edit', args=[new_contest.pk])
+        redirect_url = reverse('contest:contest', args=[new_contest.pk])
+        data['cname'] = random_word(20)
+        data['start_time'] = datetime.now() + timedelta(hours=-2)
+        data['end_time'] = datetime.now() + timedelta(hours=3)
+        data['freeze_time'] = 100
+        edited_problems = [self.CONTEST_PROBLEMS[1]]
+        data['problem'] = tuple([problem.pk for problem in edited_problems])
+        edited_coowners = [self.CONTEST_COOWNERS[1]]
+        data['coowner'] = tuple([user.username for user in edited_coowners])
+        response = self.JUDGE_CLIENTS[0].post(target_url, data=data, follow=True)
+        self.assertRedirects(response, redirect_url)
+        edited_contest = Contest.objects.get(pk=new_contest.pk)
+        self.assertEqual(edited_contest.cname, data['cname'])
+        self.assertEqual(edited_contest.start_time.timetuple(), data['start_time'].timetuple())
+        self.assertEqual(edited_contest.end_time.timetuple(), data['end_time'].timetuple())
+        self.assertEqual(edited_contest.freeze_time, data['freeze_time'])
+        current_contest_problems = [problem.pk for problem in edited_contest.problem.all()]
+        self.assertEqual(tuple(current_contest_problems), data['problem'])
+        current_contest_coowners = [user.username for user in edited_contest.coowner.all()]
+        self.assertEqual(tuple(current_contest_coowners), data['coowner'])
