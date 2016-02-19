@@ -11,6 +11,8 @@ from users.models import User
 from utils import config_info
 
 TESTCASE_PATH = config_info.get_config('path', 'testcase_path')
+SPECIAL_PATH = config_info.get_config('path', 'special_judge_path')
+PARTIAL_PATH = config_info.get_config('path', 'partial_judge_path')
 TEST_PATH = ""
 
 def create_test_directory(dir_name):
