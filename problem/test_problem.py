@@ -95,3 +95,55 @@ class Tester_Problem_detail(TestCase):
         target_url = reverse('problem:detail', args=[problem.pk])
         response = self.JUDGE_CLIENT.get(target_url)
         self.assertEqual(response.context['problem'], problem)
+
+
+class Tester_Problem_delete_problem(TestCase):
+    """ test view 'problem:delete_problem' """
+
+    def setUp(self):
+        create_test_admin_user()
+        create_test_judge_user()
+        create_test_normal_user()
+        self.ADMIN_USER = get_test_admin_user()
+        self.ADMIN_CLIENT = get_test_admin_client()
+        self.JUDGE_USER = get_test_judge_user()
+        self.JUDGE_CLIENT = get_test_judge_client()
+        self.NORMAL_USER = get_test_normal_user()
+        self.NORMAL_CLIENT = get_test_normal_user_client()
+        self.ANONYMOUS_CLIENT = Client()
+
+    def test_01_login(self):
+        # 1.user does not login
+        # Expectation: redirect to login page
+        pid = 1
+        target_url = reverse('problem:delete_problem', args=[pid])
+        redirect_url = reverse('users:login') + '?next=' + target_url
+        response = self.ANONYMOUS_CLIENT.get(target_url)
+        self.assertRedirects(response, redirect_url)
+
+    def test_02_problem_not_found(self):
+        # 2.problem does not exist
+        # Expectation: error 404
+        pid = 1000000
+        target_url = reverse('problem:delete_problem', args=[pid])
+        response = self.ADMIN_CLIENT.get(target_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_03_permission(self):
+        # 3.user has no permission
+        # Expectation: error 403
+        problem = create_problem(self.ADMIN_USER)
+        target_url = reverse('problem:delete_problem', args=[problem.pk])
+        response = self.JUDGE_CLIENT.get(target_url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_04_delete_problem(self):
+        # 4.problem exists and user has permission
+        # Expectation: delete the problem successfully and redirect to view 'problem'
+        problem = create_problem(self.ADMIN_USER)
+        target_url = reverse('problem:delete_problem', args=[problem.pk])
+        redirect_url = reverse('problem:problem')
+        response = self.ADMIN_CLIENT.get(target_url)
+        self.assertRedirects(response, redirect_url)
+        response = self.ADMIN_CLIENT.get(target_url)
+        self.assertEqual(response.status_code, 404)
