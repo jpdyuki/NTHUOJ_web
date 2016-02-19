@@ -13,16 +13,15 @@ from utils import config_info
 TESTCASE_PATH = config_info.get_config('path', 'testcase_path')
 SPECIAL_PATH = config_info.get_config('path', 'special_judge_path')
 PARTIAL_PATH = config_info.get_config('path', 'partial_judge_path')
-TEST_PATH = ""
+TEST_PATH = './testestestestestestest/'
 
-def create_test_directory(dir_name):
-    TEST_PATH = dir_name
+def create_test_directory():
     if not os.path.isdir(TEST_PATH):
         os.makedirs(TEST_PATH)
 
-def remove_test_directory(dir_name):
-    if os.path.isdir(dir_name):
-        shutil.rmtree(dir_name)
+def remove_test_directory():
+    if os.path.isdir(TEST_PATH):
+        shutil.rmtree(TEST_PATH)
 
 def create_test_user(username, password, user_level):
     test_user = User.objects.create_user(username, password)
