@@ -5,8 +5,9 @@ import random
 import string
 import filecmp
 import shutil
-
+from datetime import datetime, timedelta
 from problem.models import Problem, Tag, Testcase, Submission
+from contest.models import Contest
 from users.models import User
 from utils import config_info
 
@@ -214,3 +215,22 @@ def POST_data_of_editing_Problem(owner, pname=None, description=None, input=None
     if sample_out:
         data['sample_out'] = sample_out
     return data
+
+def create_contest(owner, cname=None, start_time=None, end_time=None,
+                   coowners=[], contestants=[], problems=[],
+                   is_homework=False, open_register=True):
+    if cname == None:
+        cname = random_word(20)
+    if start_time == None:
+        start_time = datetime.now() - timedelta(hours=1)
+    if end_time == None:
+        end_time = start_time + timedelta(hours=4)
+    new_contest = Contest.objects.create(
+        cname=cname, owner=owner, start_time=start_time, end_time=end_time,
+        is_homework=is_homework, open_register=open_register)
+    for user in coowners:
+        new_contest.coowner.add(user)
+    add_contestants(contestants, new_contest)
+    for p in problems:
+        new_contest.problem.add(p)
+    return new_contest
