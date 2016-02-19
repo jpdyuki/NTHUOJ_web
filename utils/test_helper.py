@@ -6,8 +6,10 @@ import string
 import filecmp
 import shutil
 from datetime import datetime, timedelta
+
 from problem.models import Problem, Tag, Testcase, Submission
-from contest.models import Contest
+from contest.models import Contest, Clarification
+from contest.register_contest import add_contestants
 from users.models import User
 from utils import config_info
 
@@ -15,6 +17,7 @@ TESTCASE_PATH = config_info.get_config('path', 'testcase_path')
 SPECIAL_PATH = config_info.get_config('path', 'special_judge_path')
 PARTIAL_PATH = config_info.get_config('path', 'partial_judge_path')
 TEST_PATH = './testestestestestestest/'
+
 
 def create_test_directory():
     if not os.path.isdir(TEST_PATH):
@@ -281,3 +284,10 @@ def POST_data_of_editing_Contest(owner, cname=None, start_time=None, end_time=No
         'open_register': open_register,
     }
     return data
+
+def create_clarification(contest, problem, asker, content=None):
+    if content == None:
+        content = random_word(100)
+    new_clarification = Clarification.objects.create(
+        contest=contest, problem=problem, asker=asker, content=content)
+    return new_clarification
