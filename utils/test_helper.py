@@ -29,46 +29,55 @@ def create_test_user(username, password, user_level):
     test_user.is_active = True
     test_user.save()
 
-def create_test_admin_user():
-    username = "test_admin"
-    password = "test_admin"
-    user_level = User.ADMIN
-    create_test_user(username, password, user_level)
+def create_test_admin_user(num=1):
+    for i in range(num):
+        username = "test_admin%s" % (i)
+        password = "test_admin%s" % (i)
+        user_level = User.ADMIN
+        create_test_user(username, password, user_level)
 
-def create_test_judge_user():
-    username = "test_judge"
-    password = "test_judge"
-    user_level = User.JUDGE
-    create_test_user(username, password, user_level)
+def create_test_judge_user(num=1):
+    for i in range(num):
+        username = "test_judge%s" % (i)
+        password = "test_judge%s" % (i)
+        user_level = User.JUDGE
+        create_test_user(username, password, user_level)
 
-def create_test_normal_user():
-    username = "test_user"
-    password = "test_user"
-    user_level = User.USER
-    create_test_user(username, password, user_level)
+def create_test_normal_user(num=1):
+    for i in range(num):
+        username = "test_user%s" % (i)
+        password = "test_user%s" % (i)
+        user_level = User.USER
+        create_test_user(username, password, user_level)
 
-def get_test_admin_user():
-    return User.objects.get(username="test_admin")
+def get_test_admin_user(index=0):
+    name = "test_admin%s" % (index)
+    return User.objects.get(username=name)
 
-def get_test_judge_user():
-    return User.objects.get(username="test_judge")
+def get_test_judge_user(index=0):
+    name = "test_judge%s" % (index)
+    return User.objects.get(username=name)
 
-def get_test_normal_user():
-    return User.objects.get(username="test_user")
+def get_test_normal_user(index=0):
+    name = "test_user%s" % (index)
+    return User.objects.get(username=name)
 
-def get_test_admin_client():
+def get_test_admin_client(index=0):
     test_admin_client = Client()
-    test_admin_client.login(username="test_admin", password="test_admin")
+    text = "test_admin%s" % (index)
+    test_admin_client.login(username=text, password=text)
     return test_admin_client
 
-def get_test_judge_client():
+def get_test_judge_client(index=0):
     test_judge_client = Client()
-    test_judge_client.login(username="test_judge", password="test_judge")
+    text = "test_judge%s" % (index)
+    test_judge_client.login(username=text, password=text)
     return test_judge_client
 
-def get_test_normal_user_client():
+def get_test_normal_user_client(index=0):
     test_user_client = Client()
-    test_user_client.login(username="test_user", password="test_user")
+    text = "test_user%s" % (index)
+    test_user_client.login(username=text, password=text)
     return test_user_client
 
 def create_problem(pname, owner):
