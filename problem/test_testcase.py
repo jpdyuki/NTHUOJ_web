@@ -117,3 +117,84 @@ class Tester_Problem_testcase(TestCase):
         compare_result = compare_local_and_uploaded_testcase_files(testcase.pk, testcase.pk)
         remove_testcase_file(testcase.pk, testcase.pk)
         self.assertTrue(compare_result)
+
+
+class Tester_Problem_delete_testcase(TestCase):
+    """ test view 'problem:delete_testcase' """
+
+    def setUp(self):
+        create_test_directory()
+        create_test_admin_user()
+        create_test_judge_user()
+        create_test_normal_user()
+        self.ADMIN_USER = get_test_admin_user()
+        self.ADMIN_CLIENT = get_test_admin_client()
+        self.JUDGE_USER = get_test_judge_user()
+        self.JUDGE_CLIENT = get_test_judge_client()
+        self.NORMAL_USER = get_test_normal_user()
+        self.NORMAL_CLIENT = get_test_normal_user_client()
+        self.ANONYMOUS_CLIENT = Client()
+
+    def tearDown(self):
+        remove_test_directory()
+
+    def test_01_login(self):
+        # 1.user does not login
+        # Expectation: redirect to login page
+        pid = 1
+        tid = 1
+        target_url = reverse('problem:delete_testcase', args=[pid, tid])
+        redirect_url = reverse('users:login') + '?next=' + target_url
+        response = self.ANONYMOUS_CLIENT.get(target_url)
+        self.assertRedirects(response, redirect_url)
+
+    def test_02_problem_not_found(self):
+        # 2.problem does not exist
+        # Expectation: error 404
+        pid = 1000000
+        tid = 1
+        target_url = reverse('problem:delete_testcase', args=[pid, tid])
+        response = self.ADMIN_CLIENT.get(target_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_03_testcase_not_found(self):
+        # 3.testcase does not exist
+        # Expectation: error 404
+        problem = create_problem(self.JUDGE_USER)
+        tid = 1000000
+        target_url = reverse('problem:delete_testcase', args=[problem.pk, tid])
+        response = self.ADMIN_CLIENT.get(target_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_04_testcase_misaligned(self):
+        # 4.testcase does not belong to the problem
+        # Expectation: error 404
+        problem = create_problem(self.JUDGE_USER)
+        fake_problem = create_problem(self.JUDGE_USER)
+        testcase = create_testcase(fake_problem, local_files=False, uploaded_files=True)
+        target_url = reverse('problem:delete_testcase', args=[problem.pk, testcase.pk])
+        response = self.JUDGE_CLIENT.post(target_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_05_permission(self):
+        # 5.user has no permission
+        # Expectation: error 403
+        problem = create_problem(self.JUDGE_USER)
+        testcase = create_testcase(problem, local_files=False)
+        target_url = reverse('problem:delete_testcase', args=[problem.pk, testcase.pk])
+        response = self.NORMAL_CLIENT.get(target_url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_06_delete_testcase(self):
+        # 6.both problem and testcase exist and user has permission
+        # Expectation: remove input and output files of testcase from server
+        problem = create_problem(self.JUDGE_USER)
+        testcase = create_testcase(problem, uploaded_files=True)
+        target_url = reverse('problem:delete_testcase', args=[problem.pk, testcase.pk])
+        response = self.JUDGE_CLIENT.get(target_url)
+        removing_result = not os.path.isfile('%s%d.in' % (TESTCASE_PATH, testcase.pk)) and\
+                          not os.path.isfile('%s%d.out' % (TESTCASE_PATH, testcase.pk))
+        remove_testcase_file(testcase.pk, testcase.pk)
+        self.assertTrue(removing_result)
+        testcases = Testcase.objects.filter(problem=problem).order_by('id')
+        self.assertEqual(len(testcases), 0)
