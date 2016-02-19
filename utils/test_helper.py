@@ -247,3 +247,13 @@ def create_contest_by_data(data):
     problems = Problem.objects.filter(pk__in=list(data['problem']))
     return create_contest(owner, cname, start_time, end_time,
         coowners, contestants, problems, is_homework, open_register)
+
+def create_source_code(path, sid, file_ex, size=100):
+    file_name = "%s%s.%s" % (path, sid, file_ex)
+    content = random_word(size)
+    try:
+        with open(file_name, 'w') as fp:
+            fp.write(content)
+    except (IOError, OSError):
+        print "Failed to create judge code for testing..."
+    return file_name, content
