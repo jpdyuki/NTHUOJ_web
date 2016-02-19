@@ -257,3 +257,27 @@ def create_source_code(path, sid, file_ex, size=100):
     except (IOError, OSError):
         print "Failed to create judge code for testing..."
     return file_name, content
+
+def POST_data_of_editing_Contest(owner, cname=None, start_time=None, end_time=None,
+                                 freeze_time=0, is_homework=False, open_register=True,
+                                 coowners=[], problems=[]):
+    if cname == None:
+        cname = random_word(20)
+    if start_time == None:
+        start_time = datetime.now() - timedelta(hours=1)
+    if end_time == None:
+        end_time = start_time + timedelta(hours=4)
+    coowner_tuple = tuple([user.username for user in coowners])
+    problem_tuple = tuple([problem.pk for problem in problems])
+    data = {
+        'cname': cname,
+        'owner': owner.username,
+        'start_time': start_time,
+        'end_time': end_time,
+        'coowner': coowner_tuple,
+        'problem': problem_tuple,
+        'freeze_time': freeze_time,
+        'is_homework': is_homework,
+        'open_register': open_register,
+    }
+    return data
