@@ -116,7 +116,7 @@ def create_testcase_files(file_name, size=100, uploaded=False):
         print "Failed to create testcase files for testing..."
     return file_name
 
-def create_testcase(problem, time_limit, memory_limit, local_files=True, uploaded_files=False):
+def create_testcase(problem, time_limit=1, memory_limit=32, local_files=True, uploaded_files=False):
     testcase = Testcase.objects.create(problem=problem, time_limit=time_limit,
                                        memory_limit=memory_limit)
     if local_files:
