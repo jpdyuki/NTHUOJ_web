@@ -291,4 +291,3 @@ def create_clarification(contest, problem, asker, content=None):
     new_clarification = Clarification.objects.create(
         contest=contest, problem=problem, asker=asker, content=content)
     return new_clarification
-
