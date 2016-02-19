@@ -184,17 +184,33 @@ def create_submission(problem, user, status, submit_time=None, error_msg=None):
     submission.save()
     return submission
 
-def POST_data_of_editing_Problem():
+def POST_data_of_editing_Problem(owner, pname=None, description=None, input=None,
+                                 output=None, sample_in=None, sample_out=None,
+                                 visible=True, judge_source=Problem.LOCAL,
+                                 judge_type=Problem.NORMAL, judge_language=Problem.CPP):
     data = {
         'pname': 'testProblem',
-        'owner': 'test_judge',
+        'owner': owner.username,
         'description': 'This is a problem for testing.',
         'input': 'No input.',
         'output': 'Display "Hello World!" in standard output.',
         'sample_in': '--',
         'sample_out': 'Hello World!',
-        'visible': True,
-        'judge_source': Problem.LOCAL,
-        'judge_type': Problem.NORMAL,
-        'judge_language': Problem.CPP}
+        'visible': visible,
+        'judge_source': judge_source,
+        'judge_type': judge_type,
+        'judge_language': judge_language,
+    }
+    if pname:
+        data['pname'] = pname
+    if description:
+        data['description'] = description
+    if input:
+        data['input'] = input
+    if output:
+        data['output'] = output
+    if sample_in:
+        data['sample_in'] = sample_in
+    if sample_out:
+        data['sample_out'] = sample_out
     return data
