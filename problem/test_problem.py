@@ -147,3 +147,200 @@ class Tester_Problem_delete_problem(TestCase):
         self.assertRedirects(response, redirect_url)
         response = self.ADMIN_CLIENT.get(target_url)
         self.assertEqual(response.status_code, 404)
+
+
+class Tester_Problem_edit(TestCase):
+    """ test view 'problem:edit' """
+
+    def setUp(self):
+        create_test_directory()
+        create_test_admin_user()
+        create_test_judge_user()
+        create_test_normal_user()
+        self.ADMIN_USER = get_test_admin_user()
+        self.ADMIN_CLIENT = get_test_admin_client()
+        self.JUDGE_USER = get_test_judge_user()
+        self.JUDGE_CLIENT = get_test_judge_client()
+        self.NORMAL_USER = get_test_normal_user()
+        self.NORMAL_CLIENT = get_test_normal_user_client()
+        self.ANONYMOUS_CLIENT = Client()
+
+    def tearDown(self):
+        remove_test_directory()
+
+    def test_01_login(self):
+        # 1.user does not login
+        # Expectation: redirect to login page
+        pid = 1
+        target_url = reverse('problem:edit', args=[pid])
+        redirect_url = reverse('users:login') + '?next=' + target_url
+        response = self.ANONYMOUS_CLIENT.get(target_url)
+        self.assertRedirects(response, redirect_url)
+
+    def test_02_problem_not_found(self):
+        # 2.problem does not exist
+        # Expectation: error 404
+        pid = 1000000
+        target_url = reverse('problem:edit', args=[pid])
+        response = self.ADMIN_CLIENT.get(target_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_03_permission(self):
+        # 3.user has no permission
+        # Expectation: error 403
+        problem = create_problem(self.JUDGE_USER)
+        target_url = reverse('problem:edit', args=[problem.pk])
+        response = self.NORMAL_CLIENT.get(target_url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_04_edit_property(self):
+        # 4.using POST method with arguments 'description', 'input', 'output',
+        #   'sample_in', 'sample_out', 'visible', 'judge_source', 'judge_type',
+        #   and 'judge_language'
+        # Expectation: edit problem with respect to those arguments, and redirect to view 'detail'
+        problem = create_problem(self.JUDGE_USER)
+        target_url = reverse('problem:edit', args=[problem.pk])
+        data = POST_data_of_editing_Problem(self.JUDGE_USER)
+        response = self.JUDGE_CLIENT.post(target_url, data=data, follow=True)
+        redirect_url = reverse('problem:detail', args=[problem.pk])
+        self.assertRedirects(response, redirect_url)
+        edited_problem = response.context['problem']
+        self.assertEqual(edited_problem.description, data['description'])
+        self.assertEqual(edited_problem.input, data['input'])
+        self.assertEqual(edited_problem.output, data['output'])
+        self.assertEqual(edited_problem.sample_in, data['sample_in'])
+        self.assertEqual(edited_problem.sample_out, data['sample_out'])
+        self.assertEqual(edited_problem.visible, data['visible'])
+        self.assertEqual(edited_problem.judge_source, data['judge_source'])
+        self.assertEqual(edited_problem.judge_type, data['judge_type'])
+        self.assertEqual(edited_problem.judge_language, data['judge_language'])
+
+    def test_05_upload_special_judge_code(self):
+        # 5.using POST method with argument 'special_judge_code'
+        # Expectation: upload special judge code to server successfully
+        problem = create_problem(self.JUDGE_USER)
+        target_url = reverse('problem:edit', args=[problem.pk])
+        data = POST_data_of_editing_Problem(self.JUDGE_USER, judge_type=Problem.SPECIAL)
+        file_ex = get_problem_file_extension(problem)
+        special_judge_code = create_judge_code('special', problem.pk, file_ex)
+        try:
+            with open(special_judge_code, 'r') as fp:
+                data['special_judge_code'] = fp
+                response = self.JUDGE_CLIENT.post(target_url, data=data, follow=True)
+        except (IOError, OSError):
+            print "Something went wrong when reading special judge files for testing..."
+        uploaded_special_judge_code = '%s%s%s' % (SPECIAL_PATH, problem.pk, file_ex)
+        compare_result = compare_local_and_uploaded_file(
+            special_judge_code, uploaded_special_judge_code)
+        remove_file_if_exists(special_judge_code)
+        remove_file_if_exists(uploaded_special_judge_code)
+        self.assertTrue(compare_result)
+
+    def test_06_upload_partial_judge_code_and_header(self):
+        # 6.using POST method with argument 'partial_judge_code' and 'partial_judge_header'
+        # Expectation: upload partial judge code and header to server successfully
+        problem = create_problem(self.JUDGE_USER)
+        target_url = reverse('problem:edit', args=[problem.pk])
+        data = POST_data_of_editing_Problem(self.JUDGE_USER, judge_type=Problem.PARTIAL)
+        file_ex = get_problem_file_extension(problem)
+        partial_judge_code = create_judge_code('partial', problem.pk, file_ex)
+        partial_judge_header = create_judge_code('partial', problem.pk, '.h')
+        try:
+            with open(partial_judge_code, 'r') as fp, open(partial_judge_header, 'r') as fp2:
+                data['partial_judge_code'] = fp
+                data['partial_judge_header'] = fp2
+                response = self.JUDGE_CLIENT.post(target_url, data=data, follow=True)
+        except (IOError, OSError):
+            print "Something went wrong when reading partial judge files for testing..."
+        uploaded_partial_judge_code = '%s%s%s' % (PARTIAL_PATH, problem.pk, file_ex)
+        uploaded_partial_judge_header = '%s%s.h' % (PARTIAL_PATH, problem.pk)
+        compare_result = compare_local_and_uploaded_file(
+            partial_judge_code, uploaded_partial_judge_code)
+        compare_result2 = compare_local_and_uploaded_file(
+            partial_judge_header, uploaded_partial_judge_header)
+        remove_file_if_exists(partial_judge_code)
+        remove_file_if_exists(uploaded_partial_judge_code)
+        remove_file_if_exists(partial_judge_header)
+        remove_file_if_exists(uploaded_partial_judge_header)
+        self.assertTrue(compare_result and compare_result2)
+
+    def test_07_change_judge_type_01(self):
+        # 7.changing judge type from special judge to partial judge
+        # Expectation: remove all special judge files with respect to this problem
+        problem = create_problem(self.JUDGE_USER)
+        target_url = reverse('problem:edit', args=[problem.pk])
+        data = POST_data_of_editing_Problem(self.JUDGE_USER, judge_type=Problem.SPECIAL)
+        file_ex = get_problem_file_extension(problem)
+        special_judge_code = create_judge_code('special', problem.pk, file_ex)
+        try:
+            with open(special_judge_code, 'r') as fp:
+                data['special_judge_code'] = fp
+                response = self.JUDGE_CLIENT.post(target_url, data=data, follow=True)
+        except (IOError, OSError):
+            print "Something went wrong when reading special judge files for testing..."
+        data = POST_data_of_editing_Problem(self.JUDGE_USER, judge_type=Problem.PARTIAL)
+        partial_judge_code = create_judge_code('partial', problem.pk, file_ex)
+        partial_judge_header = create_judge_code('partial', problem.pk, '.h')
+        try:
+            with open(partial_judge_code, 'r') as fp, open(partial_judge_header, 'r') as fp2:
+                data['partial_judge_code'] = fp
+                data['partial_judge_header'] = fp2
+                response = self.JUDGE_CLIENT.post(target_url, data=data, follow=True)
+        except (IOError, OSError):
+            print "Something went wrong when reading partial judge files for testing..."
+        uploaded_special_judge_code = '%s%s%s' % (SPECIAL_PATH, problem.pk, file_ex)
+        uploaded_partial_judge_code = '%s%s%s' % (PARTIAL_PATH, problem.pk, file_ex)
+        uploaded_partial_judge_header = '%s%s.h' % (PARTIAL_PATH, problem.pk)
+        result = os.path.isfile(uploaded_special_judge_code)
+        result2 = os.path.isfile(uploaded_partial_judge_code)
+        result3 = os.path.isfile(uploaded_partial_judge_header)
+        remove_file_if_exists(special_judge_code)
+        remove_file_if_exists(uploaded_special_judge_code)
+        remove_file_if_exists(partial_judge_code)
+        remove_file_if_exists(uploaded_partial_judge_code)
+        remove_file_if_exists(partial_judge_header)
+        remove_file_if_exists(uploaded_partial_judge_header)
+        self.assertFalse(result)
+        self.assertTrue(result2)
+        self.assertTrue(result3)
+
+    def test_08_change_judge_type_02(self):       
+        # 8.changing judge type from partial judge to special judge
+        # Expectation: remove all partial judge files with respect to this problem
+        problem = create_problem(self.JUDGE_USER)
+        target_url = reverse('problem:edit', args=[problem.pk])
+        data = POST_data_of_editing_Problem(self.JUDGE_USER, judge_type=Problem.PARTIAL)
+        file_ex = get_problem_file_extension(problem)
+        partial_judge_code = create_judge_code('partial', problem.pk, file_ex)
+        partial_judge_header = create_judge_code('partial', problem.pk, '.h')
+        try:
+            with open(partial_judge_code, 'r') as fp, open(partial_judge_header, 'r') as fp2:
+                data['partial_judge_code'] = fp
+                data['partial_judge_header'] = fp2
+                response = self.JUDGE_CLIENT.post(target_url, data=data, follow=True)
+        except (IOError, OSError):
+            print "Something went wrong when reading partial judge files for testing..."
+        data = POST_data_of_editing_Problem(self.JUDGE_USER, judge_type=Problem.SPECIAL)
+        file_ex = get_problem_file_extension(problem)
+        special_judge_code = create_judge_code('special', problem.pk, file_ex)
+        try:
+            with open(special_judge_code, 'r') as fp:
+                data['special_judge_code'] = fp
+                response = self.JUDGE_CLIENT.post(target_url, data=data, follow=True)
+        except (IOError, OSError):
+            print "Something went wrong when reading special judge files for testing..."
+        uploaded_special_judge_code = '%s%s%s' % (SPECIAL_PATH, problem.pk, file_ex)
+        uploaded_partial_judge_code = '%s%s%s' % (PARTIAL_PATH, problem.pk, file_ex)
+        uploaded_partial_judge_header = '%s%s.h' % (PARTIAL_PATH, problem.pk)
+        result = os.path.isfile(uploaded_special_judge_code)
+        result2 = os.path.isfile(uploaded_partial_judge_code)
+        result3 = os.path.isfile(uploaded_partial_judge_header)
+        remove_file_if_exists(special_judge_code)
+        remove_file_if_exists(uploaded_special_judge_code)
+        remove_file_if_exists(partial_judge_code)
+        remove_file_if_exists(uploaded_partial_judge_code)
+        remove_file_if_exists(partial_judge_header)
+        remove_file_if_exists(uploaded_partial_judge_header)
+        self.assertTrue(result)
+        self.assertFalse(result2)
+        self.assertFalse(result3)
