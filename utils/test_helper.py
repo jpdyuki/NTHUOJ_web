@@ -234,3 +234,16 @@ def create_contest(owner, cname=None, start_time=None, end_time=None,
     for p in problems:
         new_contest.problem.add(p)
     return new_contest
+
+def create_contest_by_data(data):
+    owner = User.objects.get(username=data['owner'])
+    cname = data['cname']
+    start_time = data['start_time']
+    end_time = data['end_time']
+    is_homework = data['is_homework']
+    open_register = data['open_register']
+    coowners = User.objects.filter(username__in=list(data['coowner']))
+    contestants=[]
+    problems = Problem.objects.filter(pk__in=list(data['problem']))
+    return create_contest(owner, cname, start_time, end_time,
+        coowners, contestants, problems, is_homework, open_register)
