@@ -231,3 +231,82 @@ class Tester_Status_error_message(TestCase):
                         if j!=i:
                             response = client.get(target_url)
                             self.assertEqual(response.status_code, 403)
+
+
+class Tester_Status_rejudge(TestCase):
+    """ test view 'status:rejudge' """
+
+    def setUp(self):
+        preprocess(self)
+
+    def test_01_login(self):
+        # 1.user does not login
+        # Expectation: redirect to login page
+        sid = 1
+        target_url = reverse('status:rejudge', args=[sid])
+        redirect_url = reverse('users:login') + '?next=' + target_url
+        response = self.ANONYMOUS_CLIENT.get(target_url)
+        self.assertRedirects(response, redirect_url)
+
+    def test_02_submission_not_found(self):
+        # 2.submission does not exist
+        # Expectation: error 404
+        sid = 1000000
+        target_url = reverse('status:rejudge', args=[sid])
+        response = self.NORMAL_CLIENT.get(target_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_03_rejudge(self):
+        # 3.only the one who meets one of the following conditions can rejudge:
+        #   a) admin
+        #   b) problem owner
+        #   c) contest owner / coowner (can only rejudge the submissions during contest)
+        users = [self.ADMIN_USER] + self.JUDGE_USER + [self.NORMAL_USER]
+        clients = [self.ADMIN_CLIENT] + self.JUDGE_CLIENT + [self.NORMAL_CLIENT]
+        contest_submissions = []
+        #rejudge when the contest is running
+        for i, problem in enumerate(self.CONTEST_PROBLEMS):
+            for user in users:
+                for status in self.STATUSES:
+                    submission = create_submission(problem, user, status)
+                    contest_submissions.append(submission)
+                    for j, client in enumerate(clients):
+                        target_url = reverse('status:rejudge', args=[submission.pk])
+                        response = client.get(target_url)
+                        if j<4 or j==i+4:
+                            rejudged = Submission.objects.get(pk=submission.pk)
+                            self.assertEqual(rejudged.status, Submission.WAIT)
+                            rejudged.status = status
+                            rejudged.save()
+                        else:
+                            self.assertEqual(response.status_code, 403)
+        #stop running contest such that there is no contest running
+        stop_running_contest(self)
+        #rejudge submissions submitted during contest
+        for i, _ in enumerate(self.CONTEST_PROBLEMS):
+            for j, _ in enumerate(users):
+                for k, _ in enumerate(self.STATUSES):
+                    target_url = reverse(
+                        'status:rejudge',
+                        args=[contest_submissions[i*48+j*6+k].pk])
+                    for p, client in enumerate(clients):
+                        response = client.get(target_url)
+                        if p<4 or p==i+4:
+                            rejudged = Submission.objects.get(
+                                pk=contest_submissions[i*48+j*6+k].pk)
+                            self.assertEqual(rejudged.status, Submission.WAIT)
+                        else:
+                            self.assertEqual(response.status_code, 403)
+        #rejudge the submissions submitted after contest
+        for problem in self.CONTEST_PROBLEMS:
+            for user in users:
+                for status in self.STATUSES:
+                    submission = create_submission(problem, user, status)
+                    for i, client in enumerate(clients):
+                        target_url = reverse('status:rejudge', args=[submission.pk])
+                        response = client.get(target_url)
+                        if i in [0, 4, 5]:
+                            rejudged = Submission.objects.get(pk=submission.pk)
+                            self.assertEqual(rejudged.status, Submission.WAIT)
+                        else:
+                            self.assertEqual(response.status_code, 403)
