@@ -175,8 +175,13 @@ def create_tag(tag_name, problem):
     problem.save()
     return new_tag
 
-def create_submission(problem, user, status):
+def create_submission(problem, user, status, submit_time=None, error_msg=None):
     submission = Submission.objects.create(problem=problem, user=user, status=status)
+    if submit_time!=None:
+        submission.submit_time = submit_time
+    if error_msg!=None:
+        submission.error_msg = error_msg
+    submission.save()
     return submission
 
 def POST_data_of_editing_Problem():
