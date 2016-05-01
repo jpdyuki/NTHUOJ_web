@@ -4,23 +4,13 @@ from django.core.urlresolvers import reverse
 from datetime import datetime, timedelta
 
 from contest.models import Contest
+from utils.nthuoj_testcase import NTHUOJ_TestCase_Basic
+from utils.nthuoj_testcase import NTHUOJ_TestCase_Complex01, NTHUOJ_TestCase_Complex02
 from utils.test_helper import *
 
 
-class Tester_Contest_new(TestCase):
+class Tester_Contest_new(NTHUOJ_TestCase_Basic):
     """ test view 'contest:new' """
-
-    def setUp(self):
-        create_test_admin_user()
-        create_test_judge_user()
-        create_test_normal_user()
-        self.ADMIN_USER = get_test_admin_user()
-        self.ADMIN_CLIENT = get_test_admin_client()
-        self.JUDGE_USER = get_test_judge_user()
-        self.JUDGE_CLIENT = get_test_judge_client()
-        self.NORMAL_USER = get_test_normal_user()
-        self.NORMAL_CLIENT = get_test_normal_user_client()
-        self.ANONYMOUS_CLIENT = Client()
 
     def test_01_login(self):
         # 1.user does not login
@@ -99,8 +89,8 @@ class Tester_Contest_delete(TestCase):
         create_test_normal_user()
         self.ADMIN_USER = get_test_admin_user()
         self.ADMIN_CLIENT = get_test_admin_client()
-        self.JUDGE_USERS = [get_test_judge_user(i) for i in range(3)]
-        self.JUDGE_CLIENTS = [get_test_judge_client(i) for i in range(3)]
+        self.JUDGE_USERS = [get_test_judge_user(i) for i in xrange(3)]
+        self.JUDGE_CLIENTS = [get_test_judge_client(i) for i in xrange(3)]
         self.NORMAL_USER = get_test_normal_user()
         self.NORMAL_CLIENT = get_test_normal_user_client()
         self.ANONYMOUS_CLIENT = Client()
@@ -160,36 +150,8 @@ class Tester_Contest_delete(TestCase):
             self.assertTrue(result)
 
 
-class Tester_Contest_contest_info(TestCase):
+class Tester_Contest_contest_info(NTHUOJ_TestCase_Complex02):
     """ test view 'contest:contest_info' """
-
-    def setUp(self):
-        create_test_admin_user()
-        # create 6 judge level users
-        # (1 as contest owner, 2 as coowner,
-        #  2 as problem owner, 1 as contestant)
-        create_test_judge_user(6)
-        # create 50 normal users as contestants
-        create_test_normal_user(50)
-        self.ADMIN_USER = get_test_admin_user()
-        self.ADMIN_CLIENT = get_test_admin_client()
-        self.JUDGE_USERS = [get_test_judge_user(i) for i in range(6)]
-        self.JUDGE_CLIENTS = [get_test_judge_client(i) for i in range(6)]
-        self.NORMAL_USERS = [get_test_normal_user(i) for i in range(50)]
-        self.NORMAL_CLIENTS = [get_test_normal_user_client(i) for i in range(50)]
-        self.ANONYMOUS_CLIENT = Client()
-        self.CONTEST_OWNER = self.JUDGE_USERS[0]
-        self.CONTEST_COOWNERS = self.JUDGE_USERS[1:3]
-        self.CONTEST_PROBLEM_OWNERS = self.JUDGE_USERS[3:5]
-        self.CONTEST_CONTESTANTS = [self.JUDGE_USERS[5]] + self.NORMAL_USERS
-        self.CONTEST_PROBLEMS = []
-        for i in range(2):
-            problem = create_problem(
-                self.CONTEST_PROBLEM_OWNERS[i], pname='contest_problem'+str(i), visible=True)
-            self.CONTEST_PROBLEMS.append(problem)
-        self.CONTEST = create_contest(
-            self.CONTEST_OWNER, coowners=self.CONTEST_COOWNERS,
-            contestants=self.CONTEST_CONTESTANTS, problems=self.CONTEST_PROBLEMS[0:2])
 
     def test_01_contest_info(self):
         target_url = reverse('contest:contest_info', args=[self.CONTEST.pk])
@@ -201,31 +163,8 @@ class Tester_Contest_contest_info(TestCase):
         self.assertEqual(response.context['contest'], self.CONTEST)
 
 
-class Tester_Contest_edit(TestCase):
+class Tester_Contest_edit(NTHUOJ_TestCase_Complex01):
     """ test view 'contest:edit' """
-
-    def setUp(self):
-        create_test_admin_user()
-        # create 6 judge level users
-        # (1 as contest owner, 2 as coowner,
-        #  2 as problem owner, 1 as normal judge)
-        create_test_judge_user(6)
-        create_test_normal_user()
-        self.ADMIN_USER = get_test_admin_user()
-        self.ADMIN_CLIENT = get_test_admin_client()
-        self.JUDGE_USERS = [get_test_judge_user(i) for i in range(6)]
-        self.JUDGE_CLIENTS = [get_test_judge_client(i) for i in range(6)]
-        self.NORMAL_USER = get_test_normal_user()
-        self.NORMAL_CLIENT = get_test_normal_user_client()
-        self.ANONYMOUS_CLIENT = Client()
-        self.CONTEST_OWNER = self.JUDGE_USERS[0]
-        self.CONTEST_COOWNERS = self.JUDGE_USERS[1:3]
-        self.CONTEST_PROBLEM_OWNERS = self.JUDGE_USERS[3:5]
-        self.CONTEST_PROBLEMS = []
-        for i in range(2):
-            problem = create_problem(
-                self.CONTEST_PROBLEM_OWNERS[i], pname='contest_problem'+str(i), visible=True)
-            self.CONTEST_PROBLEMS.append(problem)
 
     def test_01_login(self):
         # 1.user does not login

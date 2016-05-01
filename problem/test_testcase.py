@@ -1,28 +1,12 @@
-from django.test import TestCase, Client
 from django.core.urlresolvers import reverse
 
 from problem.models import Problem
+from utils.nthuoj_testcase import NTHUOJ_TestCase_Basic
 from utils.test_helper import *
 
 
-class Tester_Problem_testcase(TestCase):
+class Tester_Problem_testcase(NTHUOJ_TestCase_Basic):
     """ test view 'problem:testcase' """
-
-    def setUp(self):
-        create_test_directory()
-        create_test_admin_user()
-        create_test_judge_user()
-        create_test_normal_user()
-        self.ADMIN_USER = get_test_admin_user()
-        self.ADMIN_CLIENT = get_test_admin_client()
-        self.JUDGE_USER = get_test_judge_user()
-        self.JUDGE_CLIENT = get_test_judge_client()
-        self.NORMAL_USER = get_test_normal_user()
-        self.NORMAL_CLIENT = get_test_normal_user_client()
-        self.ANONYMOUS_CLIENT = Client()
-
-    def tearDown(self):
-        remove_test_directory()
 
     def test_01_login(self):
         # 1.user does not login
@@ -119,24 +103,8 @@ class Tester_Problem_testcase(TestCase):
         self.assertTrue(compare_result)
 
 
-class Tester_Problem_delete_testcase(TestCase):
+class Tester_Problem_delete_testcase(NTHUOJ_TestCase_Basic):
     """ test view 'problem:delete_testcase' """
-
-    def setUp(self):
-        create_test_directory()
-        create_test_admin_user()
-        create_test_judge_user()
-        create_test_normal_user()
-        self.ADMIN_USER = get_test_admin_user()
-        self.ADMIN_CLIENT = get_test_admin_client()
-        self.JUDGE_USER = get_test_judge_user()
-        self.JUDGE_CLIENT = get_test_judge_client()
-        self.NORMAL_USER = get_test_normal_user()
-        self.NORMAL_CLIENT = get_test_normal_user_client()
-        self.ANONYMOUS_CLIENT = Client()
-
-    def tearDown(self):
-        remove_test_directory()
 
     def test_01_login(self):
         # 1.user does not login

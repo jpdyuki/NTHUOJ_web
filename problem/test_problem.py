@@ -1,25 +1,13 @@
-from django.test import TestCase, Client
 from django.core.urlresolvers import reverse
 
 from problem.problem_info import get_problem_file_extension
 from problem.models import Problem, Submission
+from utils.nthuoj_testcase import NTHUOJ_TestCase_Basic
 from utils.test_helper import *
 
 
-class Tester_Problem_new(TestCase):
+class Tester_Problem_new(NTHUOJ_TestCase_Basic):
     """ test view 'problem:new' """
-
-    def setUp(self):
-        create_test_admin_user()
-        create_test_judge_user()
-        create_test_normal_user()
-        self.ADMIN_USER = get_test_admin_user()
-        self.ADMIN_CLIENT = get_test_admin_client()
-        self.JUDGE_USER = get_test_judge_user()
-        self.JUDGE_CLIENT = get_test_judge_client()
-        self.NORMAL_USER = get_test_normal_user()
-        self.NORMAL_CLIENT = get_test_normal_user_client()
-        self.ANONYMOUS_CLIENT = Client()
 
     def test_01_login(self):
         # 1.user does not login
@@ -56,20 +44,8 @@ class Tester_Problem_new(TestCase):
         self.assertEqual(response.context['problem'].pname, pname)
 
 
-class Tester_Problem_detail(TestCase):
+class Tester_Problem_detail(NTHUOJ_TestCase_Basic):
     """ test view 'problem:detail' """
-
-    def setUp(self):
-        create_test_admin_user()
-        create_test_judge_user()
-        create_test_normal_user()
-        self.ADMIN_USER = get_test_admin_user()
-        self.ADMIN_CLIENT = get_test_admin_client()
-        self.JUDGE_USER = get_test_judge_user()
-        self.JUDGE_CLIENT = get_test_judge_client()
-        self.NORMAL_USER = get_test_normal_user()
-        self.NORMAL_CLIENT = get_test_normal_user_client()
-        self.ANONYMOUS_CLIENT = Client()
 
     def test_01_problem_not_found(self):
         """ test view 'detail' """
@@ -97,20 +73,8 @@ class Tester_Problem_detail(TestCase):
         self.assertEqual(response.context['problem'], problem)
 
 
-class Tester_Problem_delete_problem(TestCase):
+class Tester_Problem_delete_problem(NTHUOJ_TestCase_Basic):
     """ test view 'problem:delete_problem' """
-
-    def setUp(self):
-        create_test_admin_user()
-        create_test_judge_user()
-        create_test_normal_user()
-        self.ADMIN_USER = get_test_admin_user()
-        self.ADMIN_CLIENT = get_test_admin_client()
-        self.JUDGE_USER = get_test_judge_user()
-        self.JUDGE_CLIENT = get_test_judge_client()
-        self.NORMAL_USER = get_test_normal_user()
-        self.NORMAL_CLIENT = get_test_normal_user_client()
-        self.ANONYMOUS_CLIENT = Client()
 
     def test_01_login(self):
         # 1.user does not login
@@ -149,24 +113,8 @@ class Tester_Problem_delete_problem(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
-class Tester_Problem_edit(TestCase):
+class Tester_Problem_edit(NTHUOJ_TestCase_Basic):
     """ test view 'problem:edit' """
-
-    def setUp(self):
-        create_test_directory()
-        create_test_admin_user()
-        create_test_judge_user()
-        create_test_normal_user()
-        self.ADMIN_USER = get_test_admin_user()
-        self.ADMIN_CLIENT = get_test_admin_client()
-        self.JUDGE_USER = get_test_judge_user()
-        self.JUDGE_CLIENT = get_test_judge_client()
-        self.NORMAL_USER = get_test_normal_user()
-        self.NORMAL_CLIENT = get_test_normal_user_client()
-        self.ANONYMOUS_CLIENT = Client()
-
-    def tearDown(self):
-        remove_test_directory()
 
     def test_01_login(self):
         # 1.user does not login
@@ -360,7 +308,6 @@ class Tester_Problem_edit(TestCase):
         except (IOError, OSError):
             raise
         finally:
-
             remove_file_if_exists(special_judge_code)
             remove_file_if_exists(uploaded_special_judge_code)
             remove_file_if_exists(partial_judge_code)
@@ -372,20 +319,8 @@ class Tester_Problem_edit(TestCase):
         self.assertTrue(compare_result)
 
 
-class Tester_Problem_rejudge(TestCase):
+class Tester_Problem_rejudge(NTHUOJ_TestCase_Basic):
     """ test view 'problem:rejudge' """
-
-    def setUp(self):
-        create_test_admin_user()
-        create_test_judge_user()
-        create_test_normal_user()
-        self.ADMIN_USER = get_test_admin_user()
-        self.ADMIN_CLIENT = get_test_admin_client()
-        self.JUDGE_USER = get_test_judge_user()
-        self.JUDGE_CLIENT = get_test_judge_client()
-        self.NORMAL_USER = get_test_normal_user()
-        self.NORMAL_CLIENT = get_test_normal_user_client()
-        self.ANONYMOUS_CLIENT = Client()
 
     def test_01_login(self):
         """ test view 'rejudge' """

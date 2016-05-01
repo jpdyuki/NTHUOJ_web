@@ -1,72 +1,13 @@
-from django.test import TestCase, Client
 from django.core.urlresolvers import reverse
 
-from datetime import datetime, timedelta
-from time import sleep
-
 from users.forms import CodeSubmitForm
+from utils.nthuoj_testcase import NTHUOJ_TestCase_Complex01
 from utils.test_helper import *
 from utils.file_info import get_extension
 
 
-def preprocess(self):
-    create_test_admin_user()
-    # create 6 judge level users
-    # (1 contest owner, 2 coowners,
-    #  2 problem owners, 1 contestant)
-    create_test_judge_user(6)
-    create_test_normal_user()
-    self.ADMIN_USER = get_test_admin_user()
-    self.ADMIN_CLIENT = get_test_admin_client()
-    self.JUDGE_USER = [get_test_judge_user(i) for i in range(6)]
-    self.JUDGE_CLIENT = [get_test_judge_client(i) for i in range(6)]
-    self.NORMAL_USER = get_test_normal_user()
-    self.NORMAL_CLIENT = get_test_normal_user_client()
-    self.ANONYMOUS_CLIENT = Client()
-    self.CONTEST_OWNER = self.JUDGE_USER[0]
-    self.CONTEST_COOWNERS = self.JUDGE_USER[1:3]
-    self.CONTEST_PROBLEM_OWNERS = self.JUDGE_USER[3:5]
-    self.CONTEST_CONTESTANTS = [self.JUDGE_USER[5], self.NORMAL_USER]
-    self.CONTEST_PROBLEMS = []
-    self.STATUSES = [
-        Submission.ACCEPTED, Submission.NOT_ACCEPTED, Submission.COMPILE_ERROR,
-        Submission.RESTRICTED_FUNCTION, Submission.JUDGE_ERROR, Submission.JUDGING]
-    # create 2 problems for contest
-    for i in range(2):
-        problem = create_problem(
-            self.CONTEST_PROBLEM_OWNERS[i], pname='contest_problem'+str(i),
-            visible=True)
-        self.CONTEST_PROBLEMS.append(problem)
-    # create a running contest
-    start_time = datetime.now() - timedelta(hours=1)
-    end_time = datetime.now() + timedelta(hours=4)
-    self.CONTEST = create_contest(
-        self.CONTEST_OWNER, 'test_contest', start_time, end_time,
-        self.CONTEST_COOWNERS, self.CONTEST_CONTESTANTS, self.CONTEST_PROBLEMS[0:2])
-
-def all_submisions_when_contest_running(self):
-    users = self.JUDGE_USER + [self.NORMAL_USER]
-    submissions = []
-    for problem in self.CONTEST_PROBLEMS:
-        for user in users:
-            for status in self.STATUSES:
-                error_msg = random_word(50)
-                submission = create_submission(
-                    problem, user, status, error_msg=error_msg)
-                submissions.append(submission)
-    return submissions
-
-def stop_running_contest(self):
-    self.CONTEST.end_time = datetime.now()
-    self.CONTEST.save()
-    sleep(1)
-
-
-class Tester_Status_error_message(TestCase):
+class Tester_Status_error_message(NTHUOJ_TestCase_Complex01):
     """ test view 'status:error_message' """
-
-    def setUp(self):
-        preprocess(self)
 
     def test_01_login(self):
         # 1.user does not login
@@ -88,8 +29,8 @@ class Tester_Status_error_message(TestCase):
     def test_03_permission_01(self):
         # 3.admin can see everyone's detail
         problem = self.CONTEST_PROBLEMS[0]
-        users = [self.ADMIN_USER, self.JUDGE_USER[0], self.JUDGE_USER[1],
-                 self.JUDGE_USER[3], self.JUDGE_USER[5], self.NORMAL_USER]
+        users = [self.ADMIN_USER, self.JUDGE_USERS[0], self.JUDGE_USERS[1],
+                 self.JUDGE_USERS[3], self.JUDGE_USERS[5], self.NORMAL_USER]
         for i in range(len(self.STATUSES)):
             error_msg = random_word(50)
             submission = create_submission(
@@ -107,7 +48,7 @@ class Tester_Status_error_message(TestCase):
             submission = create_submission(
                 problem, user, status, error_msg=error_msg)
             target_url = reverse('status:error_message', args=[submission.pk])
-            response = self.JUDGE_CLIENT[0].get(target_url)
+            response = self.JUDGE_CLIENTS[0].get(target_url)
             self.assertEqual(response.status_code, 403)
             response = self.NORMAL_CLIENT.get(target_url)
             self.assertEqual(response.status_code, 403)
@@ -118,8 +59,8 @@ class Tester_Status_error_message(TestCase):
         #      then this user cannot view anyone's detail
         #   b) owner / coowner of a contest cannot view detail submitted by
         #      the one who is not a contestant
-        users = self.JUDGE_USER + [self.NORMAL_USER]
-        clients = self.JUDGE_CLIENT + [self.NORMAL_CLIENT]
+        users = self.JUDGE_USERS + [self.NORMAL_USER]
+        clients = self.JUDGE_CLIENTS + [self.NORMAL_CLIENT]
         contest_submissions = []
         for problem in self.CONTEST_PROBLEMS:
             for i, user in enumerate(users):
@@ -140,10 +81,10 @@ class Tester_Status_error_message(TestCase):
 
     def test_06_permission_04(self):
         # 6.an user can view his own detail in normal mode
-        users = self.JUDGE_USER + [self.NORMAL_USER]
-        clients = self.JUDGE_CLIENT + [self.NORMAL_CLIENT]
-        contest_submissions = all_submisions_when_contest_running(self)
-        stop_running_contest(self)
+        users = self.JUDGE_USERS + [self.NORMAL_USER]
+        clients = self.JUDGE_CLIENTS + [self.NORMAL_CLIENT]
+        contest_submissions = self.all_submisions_when_contest_running()
+        self.stop_running_contest()
         #submission during contest
         for i, _ in enumerate(self.CONTEST_PROBLEMS):
             for j, client in enumerate(clients):
@@ -167,10 +108,10 @@ class Tester_Status_error_message(TestCase):
 
     def test_07_permission_05(self):
         # 7.a problem owner can view detail of his/her problem in normal mode
-        users = self.JUDGE_USER + [self.NORMAL_USER]
-        clients = self.JUDGE_CLIENT[3:5]
-        contest_submissions = all_submisions_when_contest_running(self)
-        stop_running_contest(self)
+        users = self.JUDGE_USERS + [self.NORMAL_USER]
+        clients = self.JUDGE_CLIENTS[3:5]
+        contest_submissions = self.all_submisions_when_contest_running()
+        self.stop_running_contest()
         #submission during contest
         for i, _ in enumerate(self.CONTEST_PROBLEMS):
             for j, user in enumerate(users):
@@ -200,10 +141,10 @@ class Tester_Status_error_message(TestCase):
 
     def test_08_permission_06(self):
         # 8.in normal mode, contest owner/coowner can still view detail during the contest 
-        users = self.JUDGE_USER + [self.NORMAL_USER]
-        clients = self.JUDGE_CLIENT[0:3]
-        contest_submissions = all_submisions_when_contest_running(self)
-        stop_running_contest(self)
+        users = self.JUDGE_USERS + [self.NORMAL_USER]
+        clients = self.JUDGE_CLIENTS[0:3]
+        contest_submissions = self.all_submisions_when_contest_running()
+        self.stop_running_contest()
         # submission during contest (permission is the same as the moment contest was running)
         for i, _ in enumerate(self.CONTEST_PROBLEMS):
             for j, _ in enumerate(users):
@@ -233,11 +174,8 @@ class Tester_Status_error_message(TestCase):
                             self.assertEqual(response.status_code, 403)
 
 
-class Tester_Status_rejudge(TestCase):
+class Tester_Status_rejudge(NTHUOJ_TestCase_Complex01):
     """ test view 'status:rejudge' """
-
-    def setUp(self):
-        preprocess(self)
 
     def test_01_login(self):
         # 1.user does not login
@@ -261,8 +199,8 @@ class Tester_Status_rejudge(TestCase):
         #   a) admin
         #   b) problem owner
         #   c) contest owner / coowner (can only rejudge the submissions during contest)
-        users = [self.ADMIN_USER] + self.JUDGE_USER + [self.NORMAL_USER]
-        clients = [self.ADMIN_CLIENT] + self.JUDGE_CLIENT + [self.NORMAL_CLIENT]
+        users = [self.ADMIN_USER] + self.JUDGE_USERS + [self.NORMAL_USER]
+        clients = [self.ADMIN_CLIENT] + self.JUDGE_CLIENTS + [self.NORMAL_CLIENT]
         contest_submissions = []
         #rejudge when the contest is running
         for i, problem in enumerate(self.CONTEST_PROBLEMS):
@@ -281,7 +219,7 @@ class Tester_Status_rejudge(TestCase):
                         else:
                             self.assertEqual(response.status_code, 403)
         #stop running contest such that there is no contest running
-        stop_running_contest(self)
+        self.stop_running_contest()
         #rejudge submissions submitted during contest
         for i, _ in enumerate(self.CONTEST_PROBLEMS):
             for j, _ in enumerate(users):
@@ -312,15 +250,8 @@ class Tester_Status_rejudge(TestCase):
                             self.assertEqual(response.status_code, 403)
 
 
-class Tester_Status_view_code(TestCase):
+class Tester_Status_view_code(NTHUOJ_TestCase_Complex01):
     """ test view 'status:view_code' """
-
-    def setUp(self):
-        create_test_directory()
-        preprocess(self)
-
-    def tearDown(self):
-        remove_test_directory()
 
     def test_01_login(self):
         """ test view 'view_code' """
@@ -353,8 +284,8 @@ class Tester_Status_view_code(TestCase):
     def test_04_permission_01(self):
         # 4.admin can see everyone's detail
         problem = self.CONTEST_PROBLEMS[0]
-        users = [self.ADMIN_USER, self.JUDGE_USER[0], self.JUDGE_USER[1],
-                 self.JUDGE_USER[3], self.JUDGE_USER[5], self.NORMAL_USER]
+        users = [self.ADMIN_USER, self.JUDGE_USERS[0], self.JUDGE_USERS[1],
+                 self.JUDGE_USERS[3], self.JUDGE_USERS[5], self.NORMAL_USER]
         for i in range(len(self.STATUSES)):
             submission = create_submission(
                 problem, users[i], self.STATUSES[i])
@@ -373,15 +304,15 @@ class Tester_Status_view_code(TestCase):
         for status in self.STATUSES:
             submission = create_submission(problem, user, status)
             target_url = reverse('status:view_code', args=[submission.pk])
-            response = self.JUDGE_CLIENT[0].get(target_url)
+            response = self.JUDGE_CLIENTS[0].get(target_url)
             self.assertEqual(response.status_code, 403)
             response = self.NORMAL_CLIENT.get(target_url)
             self.assertEqual(response.status_code, 403)
 
     def test_06_permission_03(self):
         # 6.during the contest, only owner/coowner can view contestants' detail
-        users = self.JUDGE_USER + [self.NORMAL_USER]
-        clients = self.JUDGE_CLIENT + [self.NORMAL_CLIENT]
+        users = self.JUDGE_USERS + [self.NORMAL_USER]
+        clients = self.JUDGE_CLIENTS + [self.NORMAL_CLIENT]
         contest_submissions = []
         for problem in self.CONTEST_PROBLEMS:
             for i, user in enumerate(users):
@@ -404,10 +335,10 @@ class Tester_Status_view_code(TestCase):
 
     def test_07_permission_04(self):
         # 7.a user can view his own detail in normal mode
-        users = self.JUDGE_USER + [self.NORMAL_USER]
-        clients = self.JUDGE_CLIENT + [self.NORMAL_CLIENT]
-        contest_submissions = all_submisions_when_contest_running(self)
-        stop_running_contest(self)
+        users = self.JUDGE_USERS + [self.NORMAL_USER]
+        clients = self.JUDGE_CLIENTS + [self.NORMAL_CLIENT]
+        contest_submissions = self.all_submisions_when_contest_running()
+        self.stop_running_contest()
         #submission during contest
         for i, _ in enumerate(self.CONTEST_PROBLEMS):
             for j, client in enumerate(clients):
@@ -436,10 +367,10 @@ class Tester_Status_view_code(TestCase):
 
     def test_08_permission_05(self):
         # 8.a problem owner can view detail of his/her problem in normal mode
-        users = self.JUDGE_USER + [self.NORMAL_USER]
-        clients = self.JUDGE_CLIENT[3:5]
-        contest_submissions = all_submisions_when_contest_running(self)
-        stop_running_contest(self)
+        users = self.JUDGE_USERS + [self.NORMAL_USER]
+        clients = self.JUDGE_CLIENTS[3:5]
+        contest_submissions = self.all_submisions_when_contest_running()
+        self.stop_running_contest()
         #submission during contest
         for i, _ in enumerate(self.CONTEST_PROBLEMS):
             for j, _ in enumerate(users):
@@ -474,10 +405,10 @@ class Tester_Status_view_code(TestCase):
 
     def test_09_permission_06(self):
         # 9.in normal mode, contest owner/coowner can still view detail during the contest
-        users = self.JUDGE_USER + [self.NORMAL_USER]
-        clients = self.JUDGE_CLIENT[0:3]
-        contest_submissions = all_submisions_when_contest_running(self)
-        stop_running_contest(self)
+        users = self.JUDGE_USERS + [self.NORMAL_USER]
+        clients = self.JUDGE_CLIENTS[0:3]
+        contest_submissions = self.all_submisions_when_contest_running()
+        self.stop_running_contest()
         #submission during contest (permission is the same as the moment contest was running)
         for i, _ in enumerate(self.CONTEST_PROBLEMS):
             for j, _ in enumerate(users):

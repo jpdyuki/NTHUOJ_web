@@ -1,43 +1,12 @@
-from django.test import TestCase, Client
 from django.core.urlresolvers import reverse
 
-from datetime import datetime, timedelta
-
 from contest.models import Contest, Clarification
+from utils.nthuoj_testcase import NTHUOJ_TestCase_Complex02
 from utils.test_helper import *
 
 
-
-class Tester_Contest_ask(TestCase):
+class Tester_Contest_ask(NTHUOJ_TestCase_Complex02):
     """ test view 'contest:ask' """
-
-    def setUp(self):
-        create_test_admin_user()
-        # create 6 judge level users
-        # (1 contest owner, 2 coowners,
-        #  2 problem owners, 1 contestant)
-        create_test_judge_user(6)
-        # create 51 normal users (50 contestants)
-        create_test_normal_user(51)
-        self.ADMIN_USER = get_test_admin_user()
-        self.ADMIN_CLIENT = get_test_admin_client()
-        self.JUDGE_USERS = [get_test_judge_user(i) for i in range(6)]
-        self.JUDGE_CLIENTS = [get_test_judge_client(i) for i in range(6)]
-        self.NORMAL_USERS = [get_test_normal_user(i) for i in range(51)]
-        self.NORMAL_CLIENTS = [get_test_normal_user_client(i) for i in range(51)]
-        self.ANONYMOUS_CLIENT = Client()
-        self.CONTEST_OWNER = self.JUDGE_USERS[0]
-        self.CONTEST_COOWNERS = self.JUDGE_USERS[1:3]
-        self.CONTEST_PROBLEM_OWNERS = self.JUDGE_USERS[3:5]
-        self.CONTEST_CONTESTANTS = [self.JUDGE_USERS[5]] + self.NORMAL_USERS[0:50]
-        self.CONTEST_PROBLEMS = []
-        for i in range(2):
-            problem = create_problem(
-                self.CONTEST_PROBLEM_OWNERS[i], pname='contest_problem'+str(i), visible=True)
-            self.CONTEST_PROBLEMS.append(problem)
-        self.CONTEST = create_contest(
-            self.CONTEST_OWNER, coowners=self.CONTEST_COOWNERS,
-            contestants=self.CONTEST_CONTESTANTS, problems=self.CONTEST_PROBLEMS[0:2])
 
     def test_01_login(self):
         # 1.user does not login
@@ -135,36 +104,8 @@ class Tester_Contest_ask(TestCase):
             self.assertEqual(clarification.problem, self.CONTEST_PROBLEMS[0])
 
 
-class Tester_Contest_reply(TestCase):
+class Tester_Contest_reply(NTHUOJ_TestCase_Complex02):
     """ test view 'contest:reply' """
-
-    def setUp(self):
-        create_test_admin_user()
-        # create 6 judge level users
-        # (1 contest owner, 2 coowners,
-        #  2 problem owners, 1 contestant)
-        create_test_judge_user(6)
-        # create 51 normal users (50 contestants)
-        create_test_normal_user(51)
-        self.ADMIN_USER = get_test_admin_user()
-        self.ADMIN_CLIENT = get_test_admin_client()
-        self.JUDGE_USERS = [get_test_judge_user(i) for i in range(6)]
-        self.JUDGE_CLIENTS = [get_test_judge_client(i) for i in range(6)]
-        self.NORMAL_USERS = [get_test_normal_user(i) for i in range(51)]
-        self.NORMAL_CLIENTS = [get_test_normal_user_client(i) for i in range(51)]
-        self.ANONYMOUS_CLIENT = Client()
-        self.CONTEST_OWNER = self.JUDGE_USERS[0]
-        self.CONTEST_COOWNERS = self.JUDGE_USERS[1:3]
-        self.CONTEST_PROBLEM_OWNERS = self.JUDGE_USERS[3:5]
-        self.CONTEST_CONTESTANTS = [self.JUDGE_USERS[5]] + self.NORMAL_USERS[0:50]
-        self.CONTEST_PROBLEMS = []
-        for i in range(2):
-            problem = create_problem(
-                self.CONTEST_PROBLEM_OWNERS[i], pname='contest_problem'+str(i), visible=True)
-            self.CONTEST_PROBLEMS.append(problem)
-        self.CONTEST = create_contest(
-            self.CONTEST_OWNER, coowners=self.CONTEST_COOWNERS,
-            contestants=self.CONTEST_CONTESTANTS, problems=self.CONTEST_PROBLEMS[0:2])
 
     def test_01_login(self):
         # 1.user does not login
