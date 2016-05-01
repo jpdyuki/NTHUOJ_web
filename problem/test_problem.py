@@ -229,6 +229,7 @@ class Tester_Problem_edit(TestCase):
                 response = self.JUDGE_CLIENT.post(target_url, data=data, follow=True)
         except (IOError, OSError):
             print "Something went wrong when reading special judge files for testing..."
+            raise
         uploaded_special_judge_code = '%s%s%s' % (SPECIAL_PATH, problem.pk, file_ex)
         compare_result = compare_local_and_uploaded_file(
             special_judge_code, uploaded_special_judge_code)
@@ -252,6 +253,7 @@ class Tester_Problem_edit(TestCase):
                 response = self.JUDGE_CLIENT.post(target_url, data=data, follow=True)
         except (IOError, OSError):
             print "Something went wrong when reading partial judge files for testing..."
+            raise
         uploaded_partial_judge_code = '%s%s%s' % (PARTIAL_PATH, problem.pk, file_ex)
         uploaded_partial_judge_header = '%s%s.h' % (PARTIAL_PATH, problem.pk)
         compare_result = compare_local_and_uploaded_file(
@@ -278,6 +280,7 @@ class Tester_Problem_edit(TestCase):
                 response = self.JUDGE_CLIENT.post(target_url, data=data, follow=True)
         except (IOError, OSError):
             print "Something went wrong when reading special judge files for testing..."
+            raise
         data = POST_data_of_editing_Problem(self.JUDGE_USER, judge_type=Problem.PARTIAL)
         partial_judge_code = create_judge_code('partial', problem.pk, file_ex)
         partial_judge_header = create_judge_code('partial', problem.pk, '.h')
@@ -288,6 +291,7 @@ class Tester_Problem_edit(TestCase):
                 response = self.JUDGE_CLIENT.post(target_url, data=data, follow=True)
         except (IOError, OSError):
             print "Something went wrong when reading partial judge files for testing..."
+            raise
         uploaded_special_judge_code = '%s%s%s' % (SPECIAL_PATH, problem.pk, file_ex)
         uploaded_partial_judge_code = '%s%s%s' % (PARTIAL_PATH, problem.pk, file_ex)
         uploaded_partial_judge_header = '%s%s.h' % (PARTIAL_PATH, problem.pk)
@@ -320,6 +324,7 @@ class Tester_Problem_edit(TestCase):
                 response = self.JUDGE_CLIENT.post(target_url, data=data, follow=True)
         except (IOError, OSError):
             print "Something went wrong when reading partial judge files for testing..."
+            raise
         data = POST_data_of_editing_Problem(self.JUDGE_USER, judge_type=Problem.SPECIAL)
         file_ex = get_problem_file_extension(problem)
         special_judge_code = create_judge_code('special', problem.pk, file_ex)
@@ -329,6 +334,7 @@ class Tester_Problem_edit(TestCase):
                 response = self.JUDGE_CLIENT.post(target_url, data=data, follow=True)
         except (IOError, OSError):
             print "Something went wrong when reading special judge files for testing..."
+            raise
         uploaded_special_judge_code = '%s%s%s' % (SPECIAL_PATH, problem.pk, file_ex)
         uploaded_partial_judge_code = '%s%s%s' % (PARTIAL_PATH, problem.pk, file_ex)
         uploaded_partial_judge_header = '%s%s.h' % (PARTIAL_PATH, problem.pk)

@@ -100,6 +100,7 @@ def create_judge_code(prefix, pid, file_ex, size=100):
             fp.write(random_word(size))
     except (IOError, OSError):
         print "Failed to create judge code for testing..."
+        raise
     return file_name
 
 def create_testcase_files(file_name, size=100, uploaded=False):
@@ -118,6 +119,7 @@ def create_testcase_files(file_name, size=100, uploaded=False):
             t_out.write(random_word(size))
     except (IOError, OSError):
         print "Failed to create testcase files for testing..."
+        raise
     return file_name
 
 def create_testcase(problem, time_limit=1, memory_limit=32, local_files=True, uploaded_files=False):
@@ -156,7 +158,7 @@ def compare_local_and_uploaded_file(local_file_name, uploaded_file_name):
                is an existing directory."
         print "Also, the user account of this machine that nthuoj depends on\
                should have permission to access and modify all the files in this directory."
-        return False
+        raise
 
 def compare_local_and_uploaded_testcase_files(local_file_name, uploaded_file_name):
     in_local = "%s%s.in" % (TEST_PATH, local_file_name)
@@ -170,7 +172,7 @@ def compare_local_and_uploaded_testcase_files(local_file_name, uploaded_file_nam
         print "Please make sure the path for testcase in nthuoj.cfg is an existing directory."
         print "Also, the user account of this machine that nthuoj depends on\
                should have permission to access and modify all the files in this directory."
-        return False
+        raise
 
 def create_tag(tag_name, problem):
     new_tag, created = Tag.objects.get_or_create(tag_name=tag_name)
@@ -259,6 +261,7 @@ def create_source_code(path, sid, file_ex, size=100):
             fp.write(content)
     except (IOError, OSError):
         print "Failed to create judge code for testing..."
+        raise
     return file_name, content
 
 def POST_data_of_editing_Contest(owner, cname=None, start_time=None, end_time=None,
