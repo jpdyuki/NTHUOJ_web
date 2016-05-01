@@ -231,10 +231,14 @@ class Tester_Problem_edit(TestCase):
             print "Something went wrong when reading special judge files for testing..."
             raise
         uploaded_special_judge_code = '%s%s%s' % (SPECIAL_PATH, problem.pk, file_ex)
-        compare_result = compare_local_and_uploaded_file(
-            special_judge_code, uploaded_special_judge_code)
-        remove_file_if_exists(special_judge_code)
-        remove_file_if_exists(uploaded_special_judge_code)
+        try:
+            compare_result = compare_local_and_uploaded_file(
+                special_judge_code, uploaded_special_judge_code)
+        except (IOError, OSError):
+            raise
+        finally:
+            remove_file_if_exists(special_judge_code)
+            remove_file_if_exists(uploaded_special_judge_code)
         self.assertTrue(compare_result)
 
     def test_06_upload_partial_judge_code_and_header(self):
@@ -256,14 +260,18 @@ class Tester_Problem_edit(TestCase):
             raise
         uploaded_partial_judge_code = '%s%s%s' % (PARTIAL_PATH, problem.pk, file_ex)
         uploaded_partial_judge_header = '%s%s.h' % (PARTIAL_PATH, problem.pk)
-        compare_result = compare_local_and_uploaded_file(
-            partial_judge_code, uploaded_partial_judge_code)
-        compare_result2 = compare_local_and_uploaded_file(
-            partial_judge_header, uploaded_partial_judge_header)
-        remove_file_if_exists(partial_judge_code)
-        remove_file_if_exists(uploaded_partial_judge_code)
-        remove_file_if_exists(partial_judge_header)
-        remove_file_if_exists(uploaded_partial_judge_header)
+        try:
+            compare_result = compare_local_and_uploaded_file(
+                partial_judge_code, uploaded_partial_judge_code)
+            compare_result2 = compare_local_and_uploaded_file(
+                partial_judge_header, uploaded_partial_judge_header)
+        except (IOError, OSError):
+            raise
+        finally:
+            remove_file_if_exists(partial_judge_code)
+            remove_file_if_exists(uploaded_partial_judge_code)
+            remove_file_if_exists(partial_judge_header)
+            remove_file_if_exists(uploaded_partial_judge_header)
         self.assertTrue(compare_result and compare_result2)
 
     def test_07_change_judge_type_01(self):
@@ -296,17 +304,23 @@ class Tester_Problem_edit(TestCase):
         uploaded_partial_judge_code = '%s%s%s' % (PARTIAL_PATH, problem.pk, file_ex)
         uploaded_partial_judge_header = '%s%s.h' % (PARTIAL_PATH, problem.pk)
         result = os.path.isfile(uploaded_special_judge_code)
-        result2 = os.path.isfile(uploaded_partial_judge_code)
-        result3 = os.path.isfile(uploaded_partial_judge_header)
-        remove_file_if_exists(special_judge_code)
-        remove_file_if_exists(uploaded_special_judge_code)
-        remove_file_if_exists(partial_judge_code)
-        remove_file_if_exists(uploaded_partial_judge_code)
-        remove_file_if_exists(partial_judge_header)
-        remove_file_if_exists(uploaded_partial_judge_header)
+        try:
+            compare_result = compare_local_and_uploaded_file(
+                partial_judge_code, uploaded_partial_judge_code)
+            compare_result2 = compare_local_and_uploaded_file(
+                partial_judge_header, uploaded_partial_judge_header)
+        except (IOError, OSError):
+            raise
+        finally:
+            remove_file_if_exists(special_judge_code)
+            remove_file_if_exists(uploaded_special_judge_code)
+            remove_file_if_exists(partial_judge_code)
+            remove_file_if_exists(uploaded_partial_judge_code)
+            remove_file_if_exists(partial_judge_header)
+            remove_file_if_exists(uploaded_partial_judge_header)
         self.assertFalse(result)
-        self.assertTrue(result2)
-        self.assertTrue(result3)
+        self.assertTrue(compare_result)
+        self.assertTrue(compare_result2)
 
     def test_08_change_judge_type_02(self):       
         # 8.changing judge type from partial judge to special judge
@@ -338,18 +352,24 @@ class Tester_Problem_edit(TestCase):
         uploaded_special_judge_code = '%s%s%s' % (SPECIAL_PATH, problem.pk, file_ex)
         uploaded_partial_judge_code = '%s%s%s' % (PARTIAL_PATH, problem.pk, file_ex)
         uploaded_partial_judge_header = '%s%s.h' % (PARTIAL_PATH, problem.pk)
-        result = os.path.isfile(uploaded_special_judge_code)
-        result2 = os.path.isfile(uploaded_partial_judge_code)
-        result3 = os.path.isfile(uploaded_partial_judge_header)
-        remove_file_if_exists(special_judge_code)
-        remove_file_if_exists(uploaded_special_judge_code)
-        remove_file_if_exists(partial_judge_code)
-        remove_file_if_exists(uploaded_partial_judge_code)
-        remove_file_if_exists(partial_judge_header)
-        remove_file_if_exists(uploaded_partial_judge_header)
-        self.assertTrue(result)
+        result = os.path.isfile(uploaded_partial_judge_code)
+        result2 = os.path.isfile(uploaded_partial_judge_header)
+        try:
+            compare_result = compare_local_and_uploaded_file(
+                special_judge_code, uploaded_special_judge_code)
+        except (IOError, OSError):
+            raise
+        finally:
+
+            remove_file_if_exists(special_judge_code)
+            remove_file_if_exists(uploaded_special_judge_code)
+            remove_file_if_exists(partial_judge_code)
+            remove_file_if_exists(uploaded_partial_judge_code)
+            remove_file_if_exists(partial_judge_header)
+            remove_file_if_exists(uploaded_partial_judge_header)
+        self.assertFalse(result)
         self.assertFalse(result2)
-        self.assertFalse(result3)
+        self.assertTrue(compare_result)
 
 
 class Tester_Problem_rejudge(TestCase):
