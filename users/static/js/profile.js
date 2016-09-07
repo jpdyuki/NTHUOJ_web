@@ -26,19 +26,47 @@ var confirm_change_userlevel;
 $(function() {
   plot_piechart = function(data) {
     var statisticsTotal = 0;
-    for (var i = 0; i < data.length; i++) {
-      statisticsTotal += data[i].value;
-      // Generate random color to each data
-      data[i].color = '#' + Math.random().toString(16).slice(2, 8);
+    var datasets = data.datasets[0];
+    datasets.backgroundColor = [];
+    datasets.borderColor = [];
+    var phase1 = Math.random() * 2.0 * Math.PI;
+    var phase2 = phase1 + 2;
+    var phase3 = phase2 + 2;
+    for (var i = 0; i < datasets.data.length; i++) {
+      statisticsTotal += datasets.data[i];
+      // Generate random ranbow color to each data
+      colR = Math.floor(Math.sin(0.5*i+phase1) * 127) + 128;
+      colG = Math.floor(Math.sin(0.5*i+phase2) * 127) + 128;
+      colB = Math.floor(Math.sin(0.5*i+phase3) * 127) + 128;
+      datasets.backgroundColor.push('rgba(' + [colR, colG, colB, 0.2].join(',') + ')');
+      datasets.borderColor.push('rgba(' + [colR, colG, colB, 1].join(',') + ')');
     }
-    var ctx = $('#piechart').get(0).getContext('2d');
-    // This will get the first returned node in the jQuery collection.
-    var pieChart = new Chart(ctx).Pie(data, {
-      legendTemplate: '<ul class="pie-legend">' +
-        '<% for (var i=0; i<segments.length; i++){%><li>' +
-        '<span style="background-color:<%=segments[i].fillColor%>"></span>' +
-        '<%if(segments[i].label){%><%=segments[i].label%>: <%=segments[i].value%><%}%>' +
-        '</li><%}%></ul>'
+    datasets.borderWidth = 1;
+    data.datasets[0] = datasets;
+    var ctx = $('#piechart');
+    var pieChart = new Chart(ctx, {
+      type: 'pie',
+      data: data,
+      options: {
+        legend: {
+            display: false
+        },
+        legendCallback: function(chart) {
+          var text = [];
+          text.push('<ul class="pie-legend">');
+          for (var i = 0; i < chart.data.datasets[0].data.length; i++) {
+            text.push('<li><span style="background-color:');
+            text.push(chart.data.datasets[0].backgroundColor[i]);
+            text.push('; border-color:');
+            text.push(chart.data.datasets[0].borderColor[i]);
+            text.push('"></span>');
+            text.push(chart.data.labels[i]+': '+chart.data.datasets[0].data[i]);
+            text.push('</li>');
+          }
+          text.push('</ul>');
+          return text.join("");
+        }
+      }
     });
     var legend = pieChart.generateLegend();
     $('#piechart-legend').html(legend);
